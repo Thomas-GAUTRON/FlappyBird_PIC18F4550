@@ -1,6 +1,6 @@
 ;==============================================================
-; FICHIER : PushButtonNoRebound.asm
-; OBJET   : Bouton anti-rebond (IDLE ? BOUNCE ? PRESSED ? RELEASE)
+; FICHIER : PushButton_INT0_FSM.asm
+; OBJET   : Bouton anti-rebond géré par FSM, déclenché par interruption haute
 ; MCU     : PIC18F4550
 ;==============================================================
 
@@ -36,16 +36,20 @@ btn_state
 bounce_cnt
 tmp1
 tmp2
-flap_flag       ; Flag levé à 1 à chaque appui validé (une seule fois)
+flap_flag       ; Flag levé à 1 pour un appui validé
+int_request     ; Flag interne : interruption INT0 reçue
     ENDC
 
 ;==============================================================
-; PROGRAMME PRINCIPAL
+; VECTEURS D’INTERRUPTION
 ;==============================================================
     ORG     0x0000
     goto    init
 
-    ORG     0x0008
+    ORG     0x0008               ; vecteur haute priorité
+    goto    isr_high
+
+    ORG     0x0018               ; vecteur basse priorité
     retfie
 
 ;==============================================================
@@ -58,9 +62,9 @@ init:
     clrf    LATC
 
     movlw   b'00000001'
-    movwf   TRISB           ; RB0 entrée (bouton), RB4-RB7 sorties (LED état)
+    movwf   TRISB           ; RB0 = entrée bouton
     movlw   b'11111110'
-    movwf   TRISC           ; RC0 sortie (LED événement)
+    movwf   TRISC           ; RC0 sortie LED événement
     bsf     INTCON2,7       ; désactiver pull-ups (nRBPU=1)
     movlw   0x0F
     movwf   ADCON1          ; désactiver entrées analogiques
@@ -68,13 +72,41 @@ init:
     clrf    btn_state
     clrf    bounce_cnt
     clrf    flap_flag
+    clrf    int_request
 
+    ;----------------------------------------------
+    ; CONFIGURATION INTERRUPTION EXTERNE INT0
+    ;----------------------------------------------
+    bsf     RCON, IPEN        ; active priorités high/low
+    bsf     INTCON, GIEH      ; active interruptions hautes globales
+    bsf     INTCON2, INTEDG0  ; déclenche sur front montant (0→1)
+    bcf     INTCON, INT0IF    ; clear flag INT0
+    bsf     INTCON, INT0IE    ; active INT0
+
+;==============================================================
+; BOUCLE PRINCIPALE
+;==============================================================
 main_loop:
     call    button_fsm
     goto    main_loop
 
 ;==============================================================
-; MACHINE À ÉTATS
+; INTERRUPTION HAUTE PRIORITÉ
+;==============================================================
+isr_high:
+    btfss   INTCON, INT0IF
+    retfie
+
+    ; Déclenchement détecté : marquer la demande
+    movlw   1
+    movwf   int_request
+
+    ; Effacer le flag d’interruption matériel
+    bcf     INTCON, INT0IF
+    retfie
+
+;==============================================================
+; MACHINE À ÉTATS (FSM anti-rebond)
 ;==============================================================
 button_fsm:
     movf    btn_state, W
@@ -89,14 +121,16 @@ button_fsm:
 in_idle:
     movlw   b'00010000'
     movwf   LATB
-    btfsc   PORTB, 0         ; si RB0=1 ? appui détecté
-    goto    pressed_detected
-    goto    fsm_end
 
-pressed_detected:
+    ; si une interruption a signalé un appui
+    movf    int_request, W
+    bz      fsm_end          ; si 0, rien à faire
+
+    ; sinon, on entre en phase de rebond
     movlw   STATE_BOUNCE
     movwf   btn_state
     clrf    bounce_cnt
+    clrf    int_request
     goto    fsm_end
 
 ;--------------------------------------------------------------
@@ -111,33 +145,30 @@ check_bounce:
 in_bounce:
     movlw   b'00100000'
     movwf   LATB
-    btfsc   PORTB, 0         ; tant que bouton = 1
-    goto    still_pressed
-    movlw   STATE_IDLE
-    movwf   btn_state
-    goto    fsm_end
 
-still_pressed:
+    btfss   PORTB, 0         ; bouton relâché ?
+    goto    reset_idle
+
     incf    bounce_cnt, F
     movf    bounce_cnt, W
     sublw   DEBOUNCE_MAX
     bnz     fsm_end
 
-    ;--------------------------------------------
-    ; Appui validé : passage en PRESSED
-    ;--------------------------------------------
+    ; appui validé
     movlw   STATE_PRESSED
     movwf   btn_state
     clrf    bounce_cnt
 
-    ; Lever le flag (une seule fois par appui)
     movlw   1
-    movwf   flap_flag
-
-    ; (optionnel : indicateur visuel de debug)
+    movwf   flap_flag        ; lever flag unique
     movlw   FLAP_CODE
     call    send_event
+    goto    fsm_end
 
+reset_idle:
+    movlw   STATE_IDLE
+    movwf   btn_state
+    clrf    bounce_cnt
     goto    fsm_end
 
 ;--------------------------------------------------------------
@@ -152,8 +183,9 @@ check_pressed:
 in_pressed:
     movlw   b'01000000'
     movwf   LATB
-    btfsc   PORTB, 0         ; si RB0=1 ? encore appuyé
+    btfsc   PORTB, 0         ; si bouton toujours appuyé
     goto    fsm_end
+
     movlw   STATE_RELEASE
     movwf   btn_state
     clrf    bounce_cnt
@@ -171,12 +203,13 @@ check_release:
 in_release:
     movlw   b'10000000'
     movwf   LATB
-    btfsc   PORTB, 0         ; bouton relâché = 0
+    btfsc   PORTB, 0
     goto    fsm_end
     incf    bounce_cnt, F
     movf    bounce_cnt, W
     sublw   DEBOUNCE_MAX
     bnz     fsm_end
+
     movlw   STATE_IDLE
     movwf   btn_state
     clrf    bounce_cnt
@@ -186,19 +219,19 @@ fsm_end:
     return
 
 ;==============================================================
-; ÉVÉNEMENT (LED RC0)
+; ÉVÉNEMENT VISUEL (LED RC0)
 ;==============================================================
 send_event: 
     bsf     LATC, 0
-    call    delay_1s
+    call    delay_100ms
     bcf     LATC, 0
     return
 
 ;==============================================================
-; DÉLAI ~1 s @ 8 MHz
+; DÉLAI ~100 ms @ 8 MHz
 ;==============================================================
-delay_1s:
-    movlw   D'180'
+delay_100ms:
+    movlw   D'18'
 d1:
     movwf   tmp1
 d2:
@@ -209,6 +242,3 @@ d2:
     return
 
     END
-
-
-

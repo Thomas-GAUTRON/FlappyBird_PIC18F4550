@@ -1,6 +1,6 @@
 ;==============================================================
 ; FICHIER : PushButtonNoRebound.asm
-; OBJET   : Bouton anti-rebond (IDLE?BOUNCE?PRESSED?RELEASE)
+; OBJET   : Bouton anti-rebond (IDLE ? BOUNCE ? PRESSED ? RELEASE)
 ; MCU     : PIC18F4550
 ;==============================================================
 
@@ -36,6 +36,7 @@ btn_state
 bounce_cnt
 tmp1
 tmp2
+flap_flag       ; Flag levé à 1 à chaque appui validé (une seule fois)
     ENDC
 
 ;==============================================================
@@ -57,7 +58,7 @@ init:
     clrf    LATC
 
     movlw   b'00000001'
-    movwf   TRISB           ; RB0 entrée (bouton), RB4?RB7 sorties (LED état)
+    movwf   TRISB           ; RB0 entrée (bouton), RB4-RB7 sorties (LED état)
     movlw   b'11111110'
     movwf   TRISC           ; RC0 sortie (LED événement)
     bsf     INTCON2,7       ; désactiver pull-ups (nRBPU=1)
@@ -66,6 +67,7 @@ init:
 
     clrf    btn_state
     clrf    bounce_cnt
+    clrf    flap_flag
 
 main_loop:
     call    button_fsm
@@ -120,9 +122,22 @@ still_pressed:
     movf    bounce_cnt, W
     sublw   DEBOUNCE_MAX
     bnz     fsm_end
+
+    ;--------------------------------------------
+    ; Appui validé : passage en PRESSED
+    ;--------------------------------------------
     movlw   STATE_PRESSED
     movwf   btn_state
     clrf    bounce_cnt
+
+    ; Lever le flag (une seule fois par appui)
+    movlw   1
+    movwf   flap_flag
+
+    ; (optionnel : indicateur visuel de debug)
+    movlw   FLAP_CODE
+    call    send_event
+
     goto    fsm_end
 
 ;--------------------------------------------------------------
@@ -141,9 +156,6 @@ in_pressed:
     goto    fsm_end
     movlw   STATE_RELEASE
     movwf   btn_state
-    ; événement FLAP
-    movlw   FLAP_CODE
-    call    send_event
     clrf    bounce_cnt
     goto    fsm_end
 
@@ -176,7 +188,6 @@ fsm_end:
 ;==============================================================
 ; ÉVÉNEMENT (LED RC0)
 ;==============================================================
-    
 send_event: 
     bsf     LATC, 0
     call    delay_1s
@@ -198,3 +209,6 @@ d2:
     return
 
     END
+
+
+

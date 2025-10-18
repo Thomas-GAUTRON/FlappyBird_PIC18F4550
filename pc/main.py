@@ -1,6 +1,7 @@
 import tkinter as tk
 import time
 import random
+import serial
 
 BESTSCORE_FILE = "bestscore.txt"
 
@@ -34,6 +35,11 @@ class App(tk.Tk):
         super().__init__()
         self.title("FLAPIC-BIRD")
 
+        # Configuration série
+        self.serial_port = None
+        self.serial_connected = False
+        self._init_serial()
+
         # Fenêtre
         try:
             self.attributes("-fullscreen", True)
@@ -65,7 +71,7 @@ class App(tk.Tk):
         self.bind_all("<Key-n>", lambda e: self._set_mode("Ultrasound"))
 
         # Input gameplay (uniquement Button)
-        self.bind_all("<space>", self._on_space)
+        # self.bind_all("<space>", self._on_space)
 
         # --- Variables gameplay ---
         self.last_tick         = time.time()
@@ -90,6 +96,51 @@ class App(tk.Tk):
         self.render_screen()
         self.after(FPS_MS, self.loop)
         self.after(BLINK_MS, self._blink)
+
+    # ================== Série ==================
+    def _init_serial(self):
+        try:
+            # Remplace 'COM3' par le port série de ton périphérique
+            # et 9600 par le baudrate utilisé
+            self.serial_port = serial.Serial('COM8', 38400, timeout=0.1)
+            self.serial_connected = True
+            print("Connexion série établie.")
+            # Démarre la lecture en continu
+            self.after(50, self._read_serial)
+        except Exception as e:
+            print(f"Erreur de connexion série: {e}")
+            self.serial_connected = False
+
+    def _read_serial(self):
+        if not self.serial_connected or self.serial_port is None:
+            return
+        try:
+            buffer = ""
+            if self.serial_port and self.serial_port.in_waiting > 0:
+                    print("data available")
+                    data = self.serial_port.read(self.serial_port.in_waiting)
+                    text = data.decode('utf-8', errors='ignore')
+                    buffer += text
+                    
+                    while '\n' in buffer:
+                        line, buffer = buffer.split('\n', 1)
+                        line = line.strip()
+                        self._flap()
+                        print(f"Reçu série: {line}")
+            
+        except Exception as e:
+            print(f"Erreur de lecture série: {e}")
+        finally:
+            self.after(50, self._read_serial)  # Relance la lecture
+
+    def _close_serial(self):
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.close()
+            print("Connexion série fermée.")
+
+    def destroy(self):
+        self._close_serial()
+        super().destroy()
 
     # ================== États ==================
     def _set_state(self, new_state: str):

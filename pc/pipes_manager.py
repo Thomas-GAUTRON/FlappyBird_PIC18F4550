@@ -98,6 +98,7 @@ class PipesManager:
     
     def move_pipes(self):
         "Déplace tous les tuyaux et gère le scoring"
+        return_val = 0
         remove_indices = []
         dx = -self.state.pipe_speed
         
@@ -127,6 +128,7 @@ class PipesManager:
                 self.state.pipe_speed = min(
                     PIPE_SPEED_MAX, self.state.pipe_speed + 0.05
                 )
+                return_val = 1
         
         # Suppression des tuyaux hors écran
         for idx in reversed(remove_indices):
@@ -138,7 +140,9 @@ class PipesManager:
                 top_img_id, bot_img_id, _, _ = self.state.pipe_imgs.pop(idx)
                 self.canvas.delete(top_img_id)
                 self.canvas.delete(bot_img_id)
-    
+
+        return return_val
+
     def should_spawn_new_pipe(self) -> bool:
         "Vérifie s'il faut spawner un nouveau tuyau"
         elapsed_ms = (time.time() - self.state.last_pipe_spawn) * 1000.0

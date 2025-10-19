@@ -16,6 +16,7 @@ from game_state import GameState
 from physics import PhysicsEngine
 from pipes_manager import PipesManager
 from renderer import Renderer
+import serial
 
 
 class FlappyBirdApp(tk.Tk):
@@ -40,6 +41,11 @@ class FlappyBirdApp(tk.Tk):
         self.pipes_manager = PipesManager(self.canvas, self.assets, self.state)
         self.renderer = Renderer(self.canvas, self.assets, self.state)
         
+        # Initialisation de la série
+        self.serial_port = None
+        self.serial_connected = False
+        self._init_serial()
+
         # Chargement des assets
         self._load_all_assets()
         
@@ -51,6 +57,71 @@ class FlappyBirdApp(tk.Tk):
         self.after(FPS_MS, self.game_loop)
         self.after(BLINK_MS, self.blink_loop)
     
+     # ================== Série ==================
+    def _init_serial(self):
+        try:
+            # Remplace 'COM3' par le port série de ton périphérique
+            # et 9600 par le baudrate utilisé
+            self.serial_port = serial.Serial('COM8', 38400, timeout=0.1)
+            self.serial_connected = True
+            print("Connexion série établie.")
+            # Démarre la lecture en continu
+            command = "a"
+            self.serial_port.write(command.encode("utf-8")) # envoi initial pour test
+            self.after(50, self._read_serial)   
+        except Exception as e:
+            print(f"Erreur de connexion série: {e}")
+            self.serial_connected = False
+
+    def _read_serial(self):
+        if not self.serial_connected or self.serial_port is None:
+            return
+        try:
+            buffer = ""
+            if self.serial_port and self.serial_port.in_waiting > 0:
+                    data = self.serial_port.read(self.serial_port.in_waiting)
+                    text = data.decode('utf-8', errors='ignore')
+                    buffer += text
+                    
+                    while '\n' in buffer:
+                        line, buffer = buffer.split('\n', 1)
+                        line = line.strip()
+                        if self.state.state_name == "MENU":
+                            if line and "f" in line.lower():
+                                self.start_game()
+                            elif line and "adc" in line.lower():
+                                value = line.split(":")[-1].strip()
+                                adc_value = int(value)
+                                print(f"Valeur ADC reçue: {adc_value}")
+                                pas = 255 // len(MODES)
+                                mode_index = adc_value // pas
+                                self.set_mode(MODES[mode_index])
+
+                        elif self.state.state_name == "PLAYING":    
+                            if  self.state.selected_mode == "Button":
+                                if line and "f" in line.lower():
+                                    self.handle_space()
+                        
+                        elif self.state.state_name == "GAME_OVER":
+                            if line and "f" in line.lower():
+                                self.return_to_menu()
+
+                        print(f"Reçu série: {line}")
+            
+        except Exception as e:
+            print(f"Erreur de lecture série: {e}")
+        finally:
+            self.after(50, self._read_serial)  # Relance la lecture
+
+    def _close_serial(self):
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.close()
+            print("Connexion série fermée.")
+    
+    def destroy(self):
+        self._close_serial()
+        super().destroy()
+
     def _setup_window(self):
         "Configure la fenêtre principale"
         try:
@@ -121,14 +192,20 @@ class FlappyBirdApp(tk.Tk):
         # Nettoyage en quittant PLAYING
         if old_state == "PLAYING" and new_state in ("GAME_OVER", "MENU"):
             self.renderer.clear_playfield()
-        
         # Réinitialiser l'animation du menu
         if new_state == "MENU":
             self.state.menu_animation_offset = 0
-        
+            command = "a"
+            if self.serial_connected and self.serial_port:
+                self.serial_port.write(command.encode("utf-8"))
+                
         # Initialisation en entrant dans PLAYING
         if new_state == "PLAYING":
             self.reset_gameplay()
+            if self.state.selected_mode == "Button":
+                command = "b"
+                if self.serial_connected and self.serial_port:
+                    self.serial_port.write(command.encode("utf-8"))
         
         self.render_screen()
     
@@ -173,7 +250,12 @@ class FlappyBirdApp(tk.Tk):
             self.pipes_manager.mark_pipe_spawn()
         
         # Déplacement des tuyaux
-        self.pipes_manager.move_pipes()
+        score_add = self.pipes_manager.move_pipes()
+        if score_add:
+            command = "s"
+            if self.serial_connected and self.serial_port:
+                self.serial_port.write(command.encode("utf-8"))
+
         
         # Collision avec les tuyaux
         if self.physics.check_pipe_collision(

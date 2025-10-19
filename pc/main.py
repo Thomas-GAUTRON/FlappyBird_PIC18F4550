@@ -1,503 +1,276 @@
+# main.py
+"""
+Fichier principal de Flappy Bird
+Point d'entrée de l'application
+"""
+
 import tkinter as tk
 import time
-import random
-import serial
 
-BESTSCORE_FILE = "bestscore.txt"
+from constants import (
+    WIDTH, HEIGHT, FPS_MS, BLINK_MS, 
+    BIRD_SPRITE, BIRD_CRASH_SPRITE, MODES
+)
+from assets_manager import AssetsManager
+from game_state import GameState
+from physics import PhysicsEngine
+from pipes_manager import PipesManager
+from renderer import Renderer
 
 
-# -------------------- Constantes --------------------
-WIDTH, HEIGHT = 960, 540
-FPS_MS   = 16
-BLINK_MS = 500
-
-MODES = ["Button", "Potentiometer", "Infrared", "Ultrasound"]
-DEFAULT_MODE = "Button"
-
-# Jeu (physique)
-BIRD_X       = 220
-BIRD_SIZE    = 26
-GRAVITY      = 0.45
-FLAP_IMPULSE = -8.0
-MAX_VY       = 12.0
-
-# Tuyaux (rectangles pour collisions/score)
-PIPE_WIDTH          = 80
-PIPE_GAP_BASE       = 210   # gap vertical de départ (un peu plus large)
-PIPE_GAP_MIN        = 170   # gap minimum au fil du score
-PIPE_SPEED_BASE     = 3.0   # vitesse de départ
-PIPE_SPEED_MAX      = 5.0   # limite supérieure
-PIPE_SPAWN_EVERY_MS = 2200  # espacement horizontal (un peu plus long)
-PIPE_GAP_JITTER     = 20    # +/- variation instantanée du gap à chaque spawn
-
-class App(tk.Tk):
+class FlappyBirdApp(tk.Tk):
+    "Application principale Flappy Bird"
+    
     def __init__(self):
         super().__init__()
         self.title("FLAPIC-BIRD")
-
-        # Configuration série
-        self.serial_port = None
-        self.serial_connected = False
-        self._init_serial()
-
-        # Fenêtre
+        
+        # Configuration de la fenêtre
+        self._setup_window()
+        
+        # Canvas principal
+        self.canvas = tk.Canvas(self, bg="white", highlightthickness=0)
+        self.canvas.pack(fill="both", expand=True)
+        self.canvas.bind("<Configure>", lambda e: self.render_screen())
+        
+        # Initialisation des composants
+        self.assets = AssetsManager()
+        self.state = GameState()
+        self.physics = PhysicsEngine()
+        self.pipes_manager = PipesManager(self.canvas, self.assets, self.state)
+        self.renderer = Renderer(self.canvas, self.assets, self.state)
+        
+        # Chargement des assets
+        self._load_all_assets()
+        
+        # Binding des touches
+        self._setup_key_bindings()
+        
+        # Démarrage des boucles
+        self.render_screen()
+        self.after(FPS_MS, self.game_loop)
+        self.after(BLINK_MS, self.blink_loop)
+    
+    def _setup_window(self):
+        "Configure la fenêtre principale"
         try:
             self.attributes("-fullscreen", True)
         except Exception:
             self.state("zoomed")
         self.resizable(True, True)
-
-        # --- États & sélection ---
-        self.state_name    = "MENU"   # MENU | PLAYING | GAME_OVER
-        self.selected_idx  = MODES.index(DEFAULT_MODE)
-        self.selected_mode = DEFAULT_MODE
-        self.blink_on      = True
-
-        # --- Canvas ---
-        self.canvas = tk.Canvas(self, bg="white", highlightthickness=0)
-        self.canvas.pack(fill="both", expand=True)
-        self.canvas.bind("<Configure>", lambda e: self.render_screen())
-
-        # --- Binds généraux ---
-        self.bind_all("<Key-x>", lambda e: self._do_start())   # Start
-        self.bind_all("<Return>", self._on_enter)               # Retour menu
-        self.bind_all("<Key-m>", lambda e: self.destroy())      # Quitter
-        self.bind_all("<F11>",    self._toggle_fullscreen)
-
-        # Choix direct de mode
-        self.bind_all("<Key-c>", lambda e: self._set_mode("Button"))
-        self.bind_all("<Key-v>", lambda e: self._set_mode("Potentiometer"))
-        self.bind_all("<Key-b>", lambda e: self._set_mode("Infrared"))
-        self.bind_all("<Key-n>", lambda e: self._set_mode("Ultrasound"))
-
-        # Input gameplay (uniquement Button)
-        # self.bind_all("<space>", self._on_space)
-
-        # --- Variables gameplay ---
-        self.last_tick         = time.time()
-        self.bird_y            = HEIGHT // 2
-        self.vy                = 0.0
-        self.bird_id           = None
-
-        self.pipes             = []      # [(top_id, bot_id, passed_flag)]
-        self.last_pipe_spawn   = time.time()
-        self.score             = 0
-        self.best_score = self._load_best()
-
-
-        # paramètres dynamiques (évoluent avec le score)
-        self.pipe_gap          = PIPE_GAP_BASE
-        self.pipe_speed        = PIPE_SPEED_BASE
-        self.spawn_every_ms    = PIPE_SPAWN_EVERY_MS
-
-
-
-        # --- Boucles ---
+    
+    def _load_all_assets(self):
+        "Charge tous les assets du jeu"
+        self.assets.load_bird_sprite(BIRD_SPRITE)
+        self.assets.load_bird_crash_sprite(BIRD_CRASH_SPRITE)
+        self.assets.load_background()
+        self.assets.preload_pipe_textures()
+    
+    def _setup_key_bindings(self):
+        "Configure tous les bindings clavier"
+        # Contrôles généraux
+        self.bind_all("<Key-x>", lambda e: self.start_game())
+        self.bind_all("<Return>", lambda e: self.return_to_menu())
+        self.bind_all("<Key-m>", lambda e: self.destroy())
+        
+        # Sélection de mode
+        self.bind_all("<Key-c>", lambda e: self.set_mode("Button"))
+        self.bind_all("<Key-v>", lambda e: self.set_mode("Infrared"))
+        self.bind_all("<Key-b>", lambda e: self.set_mode("Potentiometer"))
+        self.bind_all("<Key-n>", lambda e: self.set_mode("Ultrasound"))
+        
+        # Gameplay (Button mode)
+        self.bind_all("<space>", lambda e: self.handle_space())
+    
+    # ==================== Actions utilisateur ====================
+    
+    def start_game(self):
+        "Démarre le jeu"
+        if self.state.state_name == "MENU":
+            self.change_state("PLAYING")
+    
+    def return_to_menu(self):
+        "Retourne au menu"
+        if self.state.state_name in ("PLAYING", "GAME_OVER"):
+            self.change_state("MENU")
+    
+    def set_mode(self, mode_name: str):
+        "Change le mode de jeu"
+        if self.state.state_name == "MENU":
+            if self.state.set_mode(mode_name):
+                self.renderer.render_menu()
+    
+    def handle_space(self):
+        "Gère l'appui sur espace (saut)"
+        if self.state.state_name == "PLAYING" and self.state.selected_mode == "Button":
+            self.flap()
+    
+    def flap(self):
+        "Fait sauter l'oiseau"
+        self.state.vy = self.physics.apply_flap()
+    
+    # ==================== Gestion des états ====================
+    
+    def change_state(self, new_state: str):
+        "Change l'état du jeu"
+        old_state = self.state.state_name
+        
+        if not self.state.set_state(new_state):
+            return  # Pas de changement
+        
+        # Nettoyage en quittant PLAYING
+        if old_state == "PLAYING" and new_state in ("GAME_OVER", "MENU"):
+            self.renderer.clear_playfield()
+        
+        # Réinitialiser l'animation du menu
+        if new_state == "MENU":
+            self.state.menu_animation_offset = 0
+        
+        # Initialisation en entrant dans PLAYING
+        if new_state == "PLAYING":
+            self.reset_gameplay()
+        
         self.render_screen()
-        self.after(FPS_MS, self.loop)
-        self.after(BLINK_MS, self._blink)
-
-    # ================== Série ==================
-    def _init_serial(self):
-        try:
-            # Remplace 'COM3' par le port série de ton périphérique
-            # et 9600 par le baudrate utilisé
-            self.serial_port = serial.Serial('COM8', 38400, timeout=0.1)
-            self.serial_connected = True
-            print("Connexion série établie.")
-            # Démarre la lecture en continu
-            self.after(50, self._read_serial)
-        except Exception as e:
-            print(f"Erreur de connexion série: {e}")
-            self.serial_connected = False
-
-    def _read_serial(self):
-        if not self.serial_connected or self.serial_port is None:
-            return
-        try:
-            buffer = ""
-            if self.serial_port and self.serial_port.in_waiting > 0:
-                    print("data available")
-                    data = self.serial_port.read(self.serial_port.in_waiting)
-                    text = data.decode('utf-8', errors='ignore')
-                    buffer += text
-                    
-                    while '\n' in buffer:
-                        line, buffer = buffer.split('\n', 1)
-                        line = line.strip()
-                        self._flap()
-                        print(f"Reçu série: {line}")
-            
-        except Exception as e:
-            print(f"Erreur de lecture série: {e}")
-        finally:
-            self.after(50, self._read_serial)  # Relance la lecture
-
-    def _close_serial(self):
-        if self.serial_port and self.serial_port.is_open:
-            self.serial_port.close()
-            print("Connexion série fermée.")
-
-    def destroy(self):
-        self._close_serial()
-        super().destroy()
-
-    # ================== États ==================
-    def _set_state(self, new_state: str):
-        if new_state == self.state_name:
-            return
-
-        # si on passe de PLAYING -> GAME_OVER, on met à jour le best
-        if self.state_name == "PLAYING" and new_state == "GAME_OVER":
-            if self.score > getattr(self, "best_score", 0):
-                self.best_score = self.score
-                self._save_best()
-
-        # en quittant PLAYING, on nettoie le terrain (évite le carré figé)
-        if self.state_name == "PLAYING" and new_state in ("GAME_OVER", "MENU"):
-            self._clear_playfield()
-
-        self.state_name = new_state
-        if new_state == "PLAYING":  
-            self._reset_gameplay()
-        self.render_screen()
-
-
-    # Nettoyage ciblé du terrain (bird/pipes/HUD)
-    def _clear_playfield(self):
-        for tag in ("bird", "pipe", "hud"):
-            for it in self.canvas.find_withtag(tag):
-                self.canvas.delete(it)
-
-    def _load_best(self):
-        try:
-            with open(BESTSCORE_FILE, "r", encoding="utf-8") as f:
-                return int(f.read().strip())
-        except Exception:
-            return 0
-
-    def _save_best(self):
-        try:
-            with open(BESTSCORE_FILE, "w", encoding="utf-8") as f:
-                f.write(str(self.best_score))
-        except Exception:
-            pass
-
-    # ================== Sélection menu ==================
-    def _set_mode(self, mode_name: str):
-        if self.state_name != "MENU":
-            return
-        if mode_name in MODES:
-            self.selected_mode = mode_name
-            self.selected_idx  = MODES.index(mode_name)
-            self.render_menu()
-
-    # ================== Actions ==================
-    def _do_start(self):
-        if self.state_name == "MENU":
-            self._set_state("PLAYING")
-
-    def _on_enter(self, _e=None):
-        # Revenir au MENU depuis PLAYING ou GAME_OVER
-        if self.state_name in ("PLAYING", "GAME_OVER"):
-            self._set_state("MENU")
-
-    def _toggle_fullscreen(self, _e=None):
-        try:
-            self.attributes("-fullscreen", not self.attributes("-fullscreen"))
-        except Exception:
-            pass
-
-    # ================== Entrées gameplay ==================
-    def _on_space(self, _e=None):
-        # SPACE actif uniquement en PLAYING + Button
-        if self.state_name == "PLAYING" and self.selected_mode == "Button":
-            self._flap()
-
-    # ================== Gameplay (Button) ==================
-    def _reset_gameplay(self):
-        # Reset temps/physique
-        self.last_tick       = time.time()
-        self.vy              = 0.0
-
-        # Reset dessin & données
+    
+    def reset_gameplay(self):
+        "Réinitialise le gameplay"
+        self.state.reset_gameplay_vars()
+        
+        # Nettoyage du canvas
         self.canvas.delete("all")
-        self.pipes.clear()
-        self.score = 0
-        self.best_score = self._load_best()
-
-
-        # place l'oiseau au centre de la hauteur actuelle
-        self.bird_y          = (self.canvas.winfo_height() or HEIGHT) // 2
-
-        # reset dynamiques
-        self.pipe_gap     = PIPE_GAP_BASE
-        self.pipe_speed   = PIPE_SPEED_BASE
-        self.spawn_every_ms = PIPE_SPAWN_EVERY_MS
-
-        # focus pour que SPACE refonctionne après un run
+        
+        # Position initiale de l'oiseau
+        h = self.canvas.winfo_height() or HEIGHT
+        self.state.bird_y = h // 2
+        
+        # Focus pour que les touches fonctionnent
         try:
             self.focus_force()
         except Exception:
             pass
-
-        # --- Début rapide mais 2e tuyau bien espacé ---
-        # 1) On spawn un premier tuyau proche
-        self._spawn_pipe_pair(initial=True)
-        # 2) Puis on repart sur l'intervalle complet (évite le 2e trop collé)
-        self.last_pipe_spawn = time.time()
-
-    def _flap(self):
-        self.vy = FLAP_IMPULSE
-
-    def _update_playing_button(self, dt):
-        # Gravité + clamp
-        self.vy = max(-MAX_VY, min(MAX_VY, self.vy + GRAVITY))
-        self.bird_y += self.vy
-
-        # Collisions plafond/sol -> GAME OVER
-        h   = self.canvas.winfo_height() or HEIGHT
-        top = BIRD_SIZE // 2
-        bot = h - BIRD_SIZE // 2
-        if self.bird_y <= top or self.bird_y >= bot:
-            self._set_state("GAME_OVER")
-
-    # ----- Tuyaux -----
-    def _current_gap(self):
-        # gap dynamique (diminue doucement avec le score), avec un petit jitter
-        base = max(PIPE_GAP_MIN, self.pipe_gap - self.score * 2)
-        jitter = random.randint(-PIPE_GAP_JITTER, PIPE_GAP_JITTER)
-        return max(PIPE_GAP_MIN, base + jitter)
-
-    def _spawn_pipe_pair(self, initial=False):
-        """Crée une paire de tuyaux. initial=True les place plus près pour un début rapide."""
-        w = self.canvas.winfo_width()  or WIDTH
+        
+        # Spawn du premier tuyau
+        self.pipes_manager.spawn_pipe_pair(initial=True)
+        self.pipes_manager.mark_pipe_spawn()
+    
+    # ==================== Update gameplay ====================
+    
+    def update_button_mode(self, dt):
+        "Met à jour la physique en mode Button"
+        # Gravité
+        self.state.vy = self.physics.apply_gravity(self.state.vy)
+        self.state.bird_y += self.state.vy
+        
+        # Collision avec les bords
         h = self.canvas.winfo_height() or HEIGHT
-
-        gap = self._current_gap()
-        gap_center = int(h * random.uniform(0.35, 0.65))
-        top_h = max(40, gap_center - gap // 2)
-        bot_y = gap_center + gap // 2
-
-        # Si initial, on les met juste hors écran pour qu'ils arrivent vite
-        x = (w + PIPE_WIDTH) if not initial else (w + 30)
-
-        top = self.canvas.create_rectangle(x, 0, x + PIPE_WIDTH, top_h,
-                                           fill="black", tags=("pipe",))
-        bot = self.canvas.create_rectangle(x, bot_y, x + PIPE_WIDTH, h,
-                                           fill="black", tags=("pipe",))
-        self.pipes.append((top, bot, False))  # False = pas compté au score
-
-    def _move_pipes(self):
-        remove = []
-        for i, (top, bot, passed) in enumerate(self.pipes):
-            self.canvas.move(top, -self.pipe_speed, 0)
-            self.canvas.move(bot, -self.pipe_speed, 0)
-            x1, y1, x2, y2 = self.canvas.coords(top)
-            if x2 < 0:
-                remove.append(i)
-            if not passed and x2 < BIRD_X:
-                self.pipes[i] = (top, bot, True)
-                self.score += 1
-                # petite montée en difficulté
-                self.pipe_speed = min(PIPE_SPEED_MAX, self.pipe_speed + 0.05)
-        for idx in reversed(remove):
-            t, b, _ = self.pipes[idx]
-            self.canvas.delete(t); self.canvas.delete(b)
-            self.pipes.pop(idx)
-
-    def _collides_with_pipes(self):
-        bx1 = BIRD_X - BIRD_SIZE//2
-        by1 = int(self.bird_y) - BIRD_SIZE//2
-        bx2 = BIRD_X + BIRD_SIZE//2
-        by2 = int(self.bird_y) + BIRD_SIZE//2
-
-        def overlap(a, b):
-            ax1, ay1, ax2, ay2 = a
-            bx1, by1, bx2, by2 = b
-            return not (ax2 < bx1 or ax1 > bx2 or ay2 < by1 or ay1 > by2)
-
-        for (top, bot, _) in self.pipes:
-            if overlap((bx1, by1, bx2, by2), self.canvas.coords(top)) or \
-               overlap((bx1, by1, bx2, by2), self.canvas.coords(bot)):
-                return True
-        return False
-
-    # ================== Rendu ==================
+        if self.physics.check_bounds_collision(self.state.bird_y, h):
+            self.change_state("GAME_OVER")
+            return False
+        
+        # Spawn de tuyaux
+        if self.pipes_manager.should_spawn_new_pipe():
+            self.pipes_manager.spawn_pipe_pair()
+            self.pipes_manager.mark_pipe_spawn()
+        
+        # Déplacement des tuyaux
+        self.pipes_manager.move_pipes()
+        
+        # Collision avec les tuyaux
+        if self.physics.check_pipe_collision(
+            self.state.bird_y, self.state.pipes, self.canvas
+        ):
+            self.change_state("GAME_OVER")
+            return False
+        
+        return True
+    
+    # ==================== Rendu ====================
+    
     def render_screen(self):
-        self.canvas.delete("hud")  # nettoie juste le HUD
-        w = self.canvas.winfo_width()  or WIDTH
+        "Affiche l'écran en fonction de l'état"
+        self.canvas.delete("hud")
+        w = self.canvas.winfo_width() or WIDTH
         h = self.canvas.winfo_height() or HEIGHT
-
-        if self.state_name == "MENU":
+        
+        if self.state.state_name == "MENU":
             self.canvas.delete("all")
-            self._draw_title(w, h)
-            self.render_menu()
-            self._draw_footer(w, h)
-
-        elif self.state_name == "PLAYING":
-            if self.selected_mode == "Button":
-                # Bird + HUD (2 lignes)
-                self._draw_bird()
-                self.canvas.create_text(w - 10, 10, anchor="ne",
-                                        text=f"Score: {self.score}",
-                                        font=("Arial", 12),
-                                        tags=("hud",))
-                self.canvas.create_text(w - 10, 28, anchor="ne",
-                                        text=f"Best:  {self.best_score}",
-                                        font=("Arial", 12),
-                                        tags=("hud",))
+            self.renderer.draw_menu_background()
+            self.renderer.draw_title(w, h)
+            self.renderer.render_menu()
+            self.renderer.draw_footer(w, h)
+        
+        elif self.state.state_name == "PLAYING":
+            if self.state.selected_mode == "Button":
+                self.renderer.draw_bird()
+                self.renderer.update_score_hud()
+                self.renderer.update_best_hud()
             else:
-                self.canvas.delete("all")
-                self.canvas.create_text(w//2, h//2 - 10,
-                                        text=f"Mode {self.selected_mode} : en cours de réalisation",
-                                        font=("Arial", 20, "bold"))
-                self.canvas.create_text(w//2, h//2 + 30,
-                                        text="Press ENTER → MENU",
-                                        font=("Arial", 14))
-
-
-
-        elif self.state_name == "GAME_OVER":
-            self.canvas.delete("all")
-            self.canvas.create_text(w//2, h//2 - 10, text="GAME OVER",
-                                    font=("Arial", 32, "bold"))
-            self.canvas.create_text(w//2, h//2 + 30, text="Press ENTER → MENU",
-                                    font=("Arial", 14))
-            self.canvas.create_text(w - 10, 10, anchor="ne",
-                        text=f"Score: {self.score}   Best: {self.best_score}",
-                        font=("Arial", 12), tags=("hud",))
-
-
-    def _draw_title(self, w, h):
-        self.canvas.create_text(w//2, int(h*0.18),
-                                text="FLAPIC-BIRD",
-                                font=("Arial", 36, "bold"))
-        self.press_tag = "press_start"
-        self.canvas.create_text(w//2, int(h*0.28),
-                                text="Press X to start",
-                                font=("Arial", 18),
-                                tags=self.press_tag)
-
-    def _draw_footer(self, w, h):
-        self.canvas.create_text(w//2, h - 60,
-            text="X=Start • C=Button • V=Pot • B=IR • N=Ultrasound • ENTER=Menu • M=Exit",
-            font=("Arial", 12))
-        self.canvas.create_text(w//2, h - 35,
-            text="F11: Fullscreen",
-            font=("Arial", 11))
-
-    def render_menu(self):
-        w = self.canvas.winfo_width()  or WIDTH
-        h = self.canvas.winfo_height() or HEIGHT
-
-        top_y = int(h*0.38)
-        gap_y = 56
-        pad_x = 18
-        pad_y = 10
-
-        # Nettoyage items de menu précédents
-        for i in range(len(MODES)):
-            self.canvas.delete(f"menu_item_{i}")
-            self.canvas.delete(f"menu_box_{i}")
-
-        # Items + encadrement du sélectionné
-        for i, name in enumerate(MODES):
-            y   = top_y + i*gap_y
-            tag = f"menu_item_{i}"
-            style = ("Arial", 20, "bold") if i == self.selected_idx else ("Arial", 20, "normal")
-            text_id = self.canvas.create_text(w//2, y, text=name, font=style, tags=tag)
-            if i == self.selected_idx:
-                x1, y1, x2, y2 = self.canvas.bbox(text_id)
-                x1 -= pad_x; x2 += pad_x; y1 -= pad_y; y2 += pad_y
-                self.canvas.create_rectangle(x1, y1, x2, y2,
-                                             outline="black", width=3,
-                                             tags=f"menu_box_{i}")
-
-        # Reset du blink
-        self.blink_on = True
-        self._set_tag_visible("press_start", True)
-
-    def _draw_bird(self):
-        # Carré représentant l’oiseau (tag "bird" pour redraw ciblé)
-        x = BIRD_X
-        y = int(self.bird_y)
-        x1, y1 = x - BIRD_SIZE//2, y - BIRD_SIZE//2
-        x2, y2 = x + BIRD_SIZE//2, y + BIRD_SIZE//2
-        for it in self.canvas.find_withtag("bird"):
-            self.canvas.delete(it)
-        self.bird_id = self.canvas.create_rectangle(x1, y1, x2, y2,
-                                                    fill="black", tags=("bird",))
-
-    # ================== Utilitaires UI ==================
-    def _set_tag_visible(self, tag, visible: bool):
-        for item in self.canvas.find_withtag(tag):
-            self.canvas.itemconfigure(item, state=("normal" if visible else "hidden"))
-
-    # ================== Blink 1 Hz ==================
-    def _blink(self):
-        if self.state_name == "MENU":
-            self.blink_on = not self.blink_on
-            self._set_tag_visible("press_start", self.blink_on)
-        self.after(BLINK_MS, self._blink)
-
-    # ================== Boucle principale ==================
-    def loop(self):
+                self.renderer.render_placeholder_mode()
+        
+        elif self.state.state_name == "GAME_OVER":
+            self.renderer.render_game_over()
+    
+    # ==================== Boucles ====================
+    
+    def game_loop(self):
+        "Boucle principale du jeu"
         now = time.time()
-        dt  = now - self.last_tick
-        self.last_tick = now
-
-        if self.state_name == "PLAYING":
-            if self.selected_mode == "Button":
-                # Physique (peut déclencher GAME_OVER via sol/plafond)
-                self._update_playing_button(dt)
-                if self.state_name != "PLAYING":
-                    # On vient de passer en GAME_OVER -> stop ce tick tout de suite
-                    self.after(FPS_MS, self.loop)
+        dt = now - self.state.last_tick
+        self.state.last_tick = now
+        
+        # Animation continue du menu
+        if self.state.state_name == "MENU":
+            self.state.menu_animation_offset += 1
+            if self.state.menu_animation_offset % 5 == 0:
+                self.render_screen()
+        
+        # Animation continue du game over
+        if self.state.state_name == "GAME_OVER":
+            self.state.menu_animation_offset += 1
+            # Redessine pour les étoiles
+            if self.state.menu_animation_offset % 3 == 0:
+                self.render_screen()
+        
+        if self.state.state_name == "PLAYING":
+            if self.state.selected_mode == "Button":
+                # Mise à jour de la physique
+                if not self.update_button_mode(dt):
+                    # Game over détecté
+                    self.after(FPS_MS, self.game_loop)
                     return
-
-                # Spawning périodique
-                if (time.time() - self.last_pipe_spawn) * 1000.0 >= self.spawn_every_ms:
-                    self._spawn_pipe_pair()
-                    self.last_pipe_spawn = time.time()
-
-                # Move + score + légère montée de vitesse
-                self._move_pipes()
-
-                # Collisions (tuyaux)
-                if self._collides_with_pipes():
-                    self._set_state("GAME_OVER")
-                    self.after(FPS_MS, self.loop)
-                    return
-
-                # Redraw ciblé : bird + HUD (on garde les tuyaux)
-                self._draw_bird()
-                w = self.canvas.winfo_width() or WIDTH
-                for it in self.canvas.find_withtag("hud"):
-                    self.canvas.delete(it)
-                self.canvas.create_text(w - 10, 10, anchor="ne",
-                                        text=f"Score: {self.score}",
-                                        font=("Arial", 12),
-                                        tags=("hud",))
-                self.canvas.create_text(w - 10, 28, anchor="ne",
-                                        text=f"Best:  {self.best_score}",
-                                        font=("Arial", 12),
-                                        tags=("hud",))
-                                
+                
+                # Rendu
+                self.renderer.draw_play_background()
+                self.renderer.update_score_hud()
+                self.renderer.draw_bird()
+            
             else:
-                # Placeholder modes non développés
-                self.canvas.delete("all")
-                w = self.canvas.winfo_width()  or WIDTH
-                h = self.canvas.winfo_height() or HEIGHT
-                self.canvas.create_text(w//2, h//2 - 10,
-                                        text=f"Mode {self.selected_mode} : en cours de réalisation",
-                                        font=("Arial", 20, "bold"))
-                self.canvas.create_text(w//2, h//2 + 30,
-                                        text="Press ENTER → MENU",
-                                        font=("Arial", 14))
+                # Modes non implémentés
+                self.renderer.render_placeholder_mode()
+        
+        self.after(FPS_MS, self.game_loop)
+    
+    def blink_loop(self):
+        "Boucle de clignotement du texte du menu / placeholder"
+        blink_targets = []
 
-        self.after(FPS_MS, self.loop)
+        # Clignotement du "Press X to start" dans le MENU
+        if self.state.state_name == "MENU":
+            blink_targets.append("press_start")
 
-# -------------------- Main --------------------
+        # Clignotement du "Press ENTER → MENU" dans le placeholder (modes non implémentés)
+        if self.state.state_name == "PLAYING" and self.state.selected_mode != "Button":
+            blink_targets.append("ph_enter")
+
+        if blink_targets:
+            self.state.blink_on = not self.state.blink_on
+            for tag in blink_targets:
+                self.renderer.set_tag_visible(tag, self.state.blink_on)
+
+        self.after(BLINK_MS, self.blink_loop)
+
+
+# ==================== Point d'entrée ====================
 if __name__ == "__main__":
-    App().mainloop()
+    app = FlappyBirdApp()
+    app.mainloop()

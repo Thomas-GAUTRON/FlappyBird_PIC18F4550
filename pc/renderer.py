@@ -81,7 +81,7 @@ class Renderer:
     def draw_footer(self, w, h):
         "Dessine le pied de page du menu"
         self.canvas.create_text(
-            w // 2, h - 60,
+            w // 2, h - 40,
             text="FLAPPY-BIRD PROJECT - PIOUPIOUTEAM",
             font=FOOTER_FONT,
             fill=MENU_COLOR
@@ -93,7 +93,7 @@ class Renderer:
         h = self.canvas.winfo_height() or HEIGHT
         
         top_y = int(h * 0.38)
-        gap_y = 100
+        gap_y = 70
         
         # Nettoyage
         for i in range(len(MODES)):
@@ -134,10 +134,10 @@ class Renderer:
             )
         
         # Instructions "Press X to start"
-        hint_y = top_y + len(MODES) * gap_y + 100
+        hint_y = top_y + len(MODES) * gap_y - 50
         
         self.canvas.create_text(
-            w // 2, hint_y,
+            w // 2, hint_y + gap_y+30,
             text="Press X to start",
             font=MENU_FONT,
             fill=MENU_COLOR,

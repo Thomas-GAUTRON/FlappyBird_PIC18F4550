@@ -4,7 +4,7 @@ Fichier contenant toutes les constantes du jeu Flappy Bird
 """
 
 # -- Fenêtre --
-WIDTH, HEIGHT = 960, 540 # Taille écran
+WIDTH, HEIGHT = 1080, 920 # Taille écran
 FPS_MS = 16 # 1000 ms / 16 = 60 FPS
 BLINK_MS = 500 # Clignotement à 1 Hz (500ms visible + 500ms invisible)
 
@@ -14,8 +14,8 @@ BESTSCORE_FILE = "bestscore.txt" # Stockage meilleur score
 # -- Thème Menu --
 MENU_COLOR = "#FFD700"
 TITLE_FONT = ("VT323", 100)
-MENU_FONT = ("VT323", 60)
-FOOTER_FONT = ("VT323", 30)
+MENU_FONT = ("VT323", 50)
+FOOTER_FONT = ("VT323", 20)
 
 SCORE_COLOR = MENU_COLOR
 SCORE_FONT = ("VT323", 48, "bold")

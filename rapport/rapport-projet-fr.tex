@@ -1,0 +1,243 @@
+% Formatage général
+	\documentclass[a4paper,11pt]{article}
+	\usepackage[T1]{fontenc} % Encodage des caractères spéciaux
+	\usepackage{helvet} % Police équivalent Arial
+	\usepackage[french]{babel} % Localisation en français
+	\frenchbsetup{StandardLists=true} % Pour dire à babel de garder le formatage standard (anglais) des listes à puce
+	\usepackage{csquotes} % Pour remplacer automatiquement les guillemets par des guillemets typographique
+	\MakeOuterQuote{"} % Le caractère utilisé pour rentrer les guillemets dans le code est le "
+	
+% Dimensions
+	\usepackage[margin=2cm]{geometry} % Marges
+	\setlength{\parindent}{0pt} % Largeur de l'alinéa
+
+% Couleurs
+	\usepackage{xcolor} % Permet de passer un texte en couleur avec la commande \textcolor{color}{text}
+	\definecolor{darkpowderblue}{rgb}{0.0, 0.2, 0.6} % Couleur perso bleue foncée appliquée aux liens URL
+	\definecolor{gamboge}{rgb}{0.89, 0.61, 0.06} % Couleur perso orange appliquée aux subsubsections
+	\definecolor{ece}{RGB}{0, 122, 123} % Couleur ECE appliquée aux autres titres
+	\definecolor{verylightgray}{RGB}{240, 240, 240} % Couleur de fond du résumé
+	
+% Formatage des titres
+	\usepackage{titlesec} % Package utilisé pour formater les titres
+	\usepackage{needspace}
+	
+	% Formatage des sections
+	\titleformat*{\section}{\needspace{5\baselineskip}\fontsize{18}{18}\bfseries\color{ece}} % Titre en 18 pt, gras, couleur ECE
+	\titlespacing*{\section}
+		{0mm} % Marge à gauche du titre
+		{8mm} % Espacement avant le titre
+		{4mm} % Espacement après le titre
+	
+	% Formatage dessub sections
+	\titleformat*{\subsection}{\needspace{3\baselineskip}\fontsize{14}{14}\bfseries\color{ece}} % Titre en 14 pt, gras, couleur ECE
+	\titlespacing*{\subsection}
+		{0mm} % Marge à gauche du titre
+		{6mm} % Espacement avant le titre
+		{4mm} % Espacement après le titre
+	
+	% Formatage des subsubsections
+	\titleformat*{\subsubsection}{\needspace{1\baselineskip}\fontsize{12}{12}\bfseries\color{gamboge}} % Titre en 12 pt, gras, couleur orange
+	\titlespacing*{\subsubsection}
+		{0mm} % Marge à gauche du titre
+		{4mm} % Espacement avant le titre
+		{4mm} % Espacement après le titre
+	
+% En-tête et pied de page
+	\usepackage{fancyhdr} % Package utilisé pour personnaliser facilement en-tête et pied-de-page
+	\renewcommand{\headrulewidth}{0pt} % Épaisseur de la ligne de séparation entre en-tête et corps du rapport
+	
+	\fancypagestyle{main}{ % En-tête et pied de page pour toutes les autres pages
+		\fancyhead[L]{\includegraphics[width=2cm]{images/ece.png}} % En haut à gauche, le logo ECE
+		\fancyhead[R]{ING4 Groupe 1 APP SE} % En haut à droite, l'année et le groupe
+		\fancyfoot[C]{\thepage} % En bas au centre, le numéro de page
+	}
+	\pagestyle{main}
+		
+% Page de titre
+	\newcommand{\HRule}[1]{\rule{\linewidth}{#1}} % Ligne de séparation horizontale d'une épaisseur donnée
+
+% Figures
+	\usepackage{graphicx} % Permet l'ajout d'images en spécifiant la taille
+	\usepackage{subcaption} % Package utilisé pour avoir des sous-figures avec chacune une légende
+	\usepackage[labelfont=bf]{caption} % "Figure" et numéro en gras
+	
+% Liens
+	\usepackage[colorlinks=true,linkcolor=black,urlcolor=darkpowderblue]{hyperref}
+
+\begin{document}
+	
+	\title{
+		\begin{figure}[htb]
+			\begin{minipage}[t]{.45\textwidth}
+				\centering
+				\includegraphics[width=6cm]{images/ece.png}
+			\end{minipage}
+			\hfill
+			\begin{minipage}[t]{.45\textwidth}
+				\centering
+				\raggedleft\vspace{-12mm}\Large{\textbf{ING4\\Groupe 1 APP SE}}
+			\end{minipage}  
+		\end{figure}
+		\vspace{2cm}
+		\HRule{1.5pt} \\ [0.5cm]
+		\LARGE \textbf{\Large{RAPPORT DE PROJET}\\ [5mm]
+		\huge{\textcolor{ece}{Flapic Bird}}}
+		\HRule{1.5pt} \\ [3mm]
+		
+		\normalsize
+		\vspace{1cm}
+		\fcolorbox{white}{verylightgray}{
+			\begin{minipage}{16cm}
+				\vspace{0.5cm}
+				\textbf{RÉSUMÉ} -- Quel est le contexte et la problématique du projet ? Quels sont les objectifs techniques ?
+				Dans quel contexte faites-vous ce projet ? [maximum 20 lignes]
+				\vspace{0.5cm}
+			\end{minipage}}
+		\vfill
+	}
+	
+	\author{
+		\colorbox{yellow}{André-Marie AMPÈRE} \and \colorbox{yellow}{Alessandro VOLTA}
+	}
+	
+	\date{
+		Nous attestons que ce travail est original,\\
+		qu’il est le fruit d’un travail commun au binôme et qu’il a été rédigé de manière autonome.\\ [2mm]
+		\textbf{\colorbox{yellow}{Ville, le JJ/MM/AAAA}}
+	}
+	
+	\maketitle % Page de titre
+	
+	\newpage
+	\tableofcontents % Table des matières
+	
+	\newpage
+	\section{Objectifs}
+	
+		Quel est l’objectif de ce document ?
+		
+		Que va y trouver le lecteur ?
+	
+	\section{Glossaire}
+		\subsection{Termes}
+		
+			Renseigner ici sous forme de tableau les principaux termes techniques et leurs définitions.
+			
+		\subsection{Acronymes}
+		
+			Renseigner ici sous forme de tableau les principaux acronymes, leurs signification et leurs explication.
+			
+	\section{L'équipe}
+		\subsection{Présentation de l’équipe}
+			
+			Qui sont les membres qui composent l’équipe ?
+			
+			Quelles sont leurs compétences et qualités ?
+			
+		\subsection{Organisation de l’équipe}
+			
+			Comment est organisée l’équipe ? Comment est réparti le travail ?
+			
+		\subsection{Diagramme de Gantt}
+		
+			Comment est utilisé le temps alloué au projet ?
+			
+	\section{Contexte et problématique}
+		\subsection{Contexte}
+		
+			Quel est le contexte économique et ou sociétal du projet ?
+			
+			Comment est née l’invention / la technologie du projet, comment a-t-elle évolué ?
+			
+		\subsection{Problématique}
+		
+			À quelle problématique répond le projet ?
+			
+		\subsection{Spécifications techniques}
+		
+			Quelles sont les spécifications techniques du projet ?
+			
+			\textbf{NB} : Certains projets d’électronique à l’ECE n’en ont pas.
+			
+	\section{Conception}
+		\subsection{Architecture fonctionnelle}
+		
+			Quelle est l’architecture fonctionnelle du projet ?
+			
+			\textbf{NB} : Les fonctionnalités sont des verbes à l’infinitif suivi de compléments.
+			
+			À ce stade, aucun choix technique n’est fait.
+			
+		\subsection{Architecture matérielle}
+			
+			Quel matériel est utilisé et pourquoi ?
+			
+			Comment les différentes briques techniques sont connectées entre elles ?
+			
+			\textbf{NB} : Cela peut-être une schématique de circuit électronique.
+			
+		\subsection{Architecture logicielle}
+		
+			Comment fonctionne le programme ?
+			
+			\textbf{NB} : Présenter un algorigramme de votre code si vous en avez-un.
+	
+	\section{Développement}
+			
+		L’idée est de présenter ici comment ont été développés les différents blocs du projet. Cela peut rassembler des calculs théoriques, des choix techniques, etc. et surtout bien expliquer le concept clef derrière	sa fabrication. Le lecteur doit être capable de comprendre les enjeux techniques et de développer le module en question à l’aide de ces sous-sections.
+			
+		\subsection{Module 1}
+		\subsection{Module 2}
+		\subsection{Module 3}
+		
+	\section{Tests et validation}
+	
+		Une section au moins aussi importante que celle sur le développement.
+		
+		Il est question ici de montrer les performances techniques du système et de valider le développement module par module puis au global (intégration) en accord avec la partie IV.
+		
+		Chaque résultat (bien souvent des courbes) doit être décrit comme suit :
+		
+		\begin{itemize}
+			\item ce qui a été fait ;
+			\item ce que l’on est censé obtenir et critère de réussite du test ;
+			\item ce que l’on obtient ;
+			\item conclusion : validation ou non du bon fonctionnement du module.
+		\end{itemize}
+	
+		\subsection{Module 1}
+		\subsection{Module 2}
+		\subsection{Module 3}
+	
+	\section{Bilan}	
+		\subsection{État d’avancement}
+		
+			Où en est le projet ? A-t-on atteint les objectifs ?
+			
+			Quels modules restent à finaliser (ou à perfectionner pour être en accord avec les spécifications techniques) ?
+			
+		\subsection{Pertinence de la solution technique}
+			
+			Quelles sont les limites techniques de la solution développée ?
+			
+			Quelles sont les possibilités d’évolution ou de poursuite ?
+			
+		\subsection{Bilan sur le travail d’équipe}
+		
+			Qu’avez-vous appris individuellement ? Quelles compétences vont pouvoir être mises en avant lors de votre prochaine recherche de stage ?
+			
+			Comment l’équipe aurait pu mieux s’organiser ? Proposer un plan d’action pour le prochain projet.
+	
+	\newpage	
+	\section{Sources}
+		
+		Documents utilisés et sites internet consultés pour développer le projet.
+		
+		\textbf{NB} : voir le document « comment rédiger un rapport » sur la page Moodle La Toolbox pour la syntaxe	à utiliser pour vos citations.
+	
+	\newpage
+	\section{Annexes}
+		Documents volumineux, éventuels codes (\textbf{\textcolor{red}{pas de code dans le rapport}}).
+
+\end{document}

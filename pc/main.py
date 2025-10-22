@@ -60,8 +60,6 @@ class FlappyBirdApp(tk.Tk):
      # ================== Série ==================
     def _init_serial(self):
         try:
-            # Remplace 'COM3' par le port série de ton périphérique
-            # et 9600 par le baudrate utilisé
             self.serial_port = serial.Serial('COM8', 38400, timeout=0.1)
             self.serial_connected = True
             print("Connexion série établie.")
@@ -88,7 +86,7 @@ class FlappyBirdApp(tk.Tk):
                         line = line.strip()
                         if self.state.state_name == "MENU":
                             if line and "f" in line.lower():
-                                self.start_game()
+                                self.handle_space()
                             elif line and "adc" in line.lower():
                                 value = line.split(":")[-1].strip()
                                 adc_value = int(value)
@@ -140,9 +138,8 @@ class FlappyBirdApp(tk.Tk):
     def _setup_key_bindings(self):
         "Configure tous les bindings clavier"
         # Contrôles généraux
-        self.bind_all("<Key-x>", lambda e: self.start_game())
-        self.bind_all("<Return>", lambda e: self.return_to_menu())
-        self.bind_all("<Key-m>", lambda e: self.destroy())
+        self.bind_all("<Key-a>", lambda e: self.return_to_menu())
+        self.bind_all("<Escape>", lambda e: self.destroy())
         
         # Sélection de mode
         self.bind_all("<Key-c>", lambda e: self.set_mode("Button"))
@@ -154,11 +151,6 @@ class FlappyBirdApp(tk.Tk):
         self.bind_all("<space>", lambda e: self.handle_space())
     
     # ==================== Actions utilisateur ====================
-    
-    def start_game(self):
-        "Démarre le jeu"
-        if self.state.state_name == "MENU":
-            self.change_state("PLAYING")
     
     def return_to_menu(self):
         "Retourne au menu"
@@ -172,6 +164,9 @@ class FlappyBirdApp(tk.Tk):
                 self.renderer.render_menu()
     
     def handle_space(self):
+        "Démarre le jeu"
+        if self.state.state_name == "MENU":
+            self.change_state("PLAYING")
         "Gère l'appui sur espace (saut)"
         if self.state.state_name == "PLAYING" and self.state.selected_mode == "Button":
             self.flap()

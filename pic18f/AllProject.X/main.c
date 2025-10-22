@@ -14,17 +14,19 @@ typedef enum
 } E_mode;
 
 void __interrupt(high_priority) irq_handle_high(void);
-void affiche_score();
+void affiche_score(void);
 
 #pragma config WDT = OFF
 #pragma config MCLRE = ON
 #pragma config DEBUG = OFF
 #pragma config CPUDIV = OSC1_PLL2
 
-int flap_event = 0;
-int ADC_event = 0;
+uint8_t  flap_event = 0;
+uint8_t  ADC_event = 0;
+uint8_t  num7seg = 0;
 int ADC_value;
 int score = 1234;
+
 E_mode current_mode = MODE_NOTHING;
 volatile unsigned char timer_count = 0;
 
@@ -55,7 +57,7 @@ int main()
         "; Configuration ADC\n"
         "BCF PIR1, 6\n" /* Clear ADIF (ADIF = bit 6) */
         "BSF PIE1, 6\n" /* Enable ADC interrupt (ADIE = bit 6) */
-        "MOVLW 0x28\n"  /* CHS = 10 (bits 5..2 = 1010) */
+        "MOVLW 0x20\n"  /* CHS = 8 (bits 5..2 = 1000) */
         "MOVWF ADCON0\n"
         "MOVLW 0x00\n" /* ADFM = 0 (justifié à gauche) et config par défaut */
         "MOVWF ADCON2\n"
@@ -71,7 +73,6 @@ int main()
         "BSF PIE1, 0\n"  /* Enable TMR1IE (bit 0) */
         "BSF T1CON, 0\n" /* Start Timer1 (TMR1ON = bit 0) */
     );
-
     initUSBLib();
     CDCSetBaudRate(38400); // Configurer le baudrate USB CDC à 38400 bps
 
@@ -115,7 +116,7 @@ int main()
             else if (usbReadBuffer[0] == 's')
             {
                 score += 1;
-                putrsUSBUSART("Score incrémenté\n");
+                putrsUSBUSART("Score incrémenté\n");               
             }
             else
             {
@@ -152,29 +153,34 @@ int tab_int_to_7seg(int val)
 void affiche_score()
 {
     int buffer_score = score;
-    PORTD = 0x00;
-    PORTA = 0x01;
-    PORTD = tab_int_to_7seg(buffer_score % 10);
-    _delay(1);
-    PORTD = 0x00;
-    PORTA = 0x02;
-    buffer_score /= 10;
-    PORTD = tab_int_to_7seg(buffer_score % 10);
-    _delay(1);
-    PORTD = 0x00;
-    PORTA = 0x04;
-    buffer_score /= 10;
-    PORTD = tab_int_to_7seg(buffer_score % 10);
-    _delay(1);
-    PORTD = 0x00;
-    PORTA = 0x08;
-    buffer_score /= 10;
-    PORTD = tab_int_to_7seg(buffer_score % 10);
-    _delay(1);
-    PORTA = 0x00;
+    if(num7seg == 0) {
+        PORTD = 0x00;
+        PORTA = 0x01;
+        PORTD = tab_int_to_7seg(buffer_score % 10);
+    }
+    else if(num7seg == 1) {
+        PORTD = 0x00;
+        PORTA = 0x02;
+        buffer_score /= 10;
+        PORTD = tab_int_to_7seg(buffer_score % 10);
+    }
+    else if (num7seg == 2)
+    {
+        PORTD = 0x00;
+        PORTA = 0x04;
+        buffer_score /= 100;
+        PORTD = tab_int_to_7seg(buffer_score % 10);
+    }
+    else if(num7seg == 3){
+        PORTD = 0x00;
+        PORTA = 0x08;
+        buffer_score /= 1000;
+        PORTD = tab_int_to_7seg(buffer_score % 10);
+    }
+    num7seg = (num7seg + 1)%4;
 }
 
-void __interrupt() irq_handle_high(void)
+void __interrupt(high_priority) irq_handle_high(void)
 {
     processUSBTasks(); // Gère les événements USB
 
@@ -187,7 +193,7 @@ void __interrupt() irq_handle_high(void)
         );
     }
 
-    // Interruption ADC (clear flag en ASM, récupérer ADRESH en C)
+    // Interruption ADC (clear flag en ASM, récupérer ADRESH en m)
     if (PIR1bits.ADIF)
     {
        

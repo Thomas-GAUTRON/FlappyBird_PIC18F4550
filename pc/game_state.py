@@ -20,6 +20,11 @@ class GameState:
         self.selected_idx = MODES.index(DEFAULT_MODE)
         self.selected_mode = DEFAULT_MODE
         
+        # Overlay system
+        self.overlay_active = False
+        self.overlay_type = None  # "INFO" | None
+        self.previous_state = None
+        
         # Interface
         self.blink_on = True
         
@@ -69,6 +74,18 @@ class GameState:
             self.selected_idx = MODES.index(mode_name)
             return True
         return False
+    
+    def show_info(self):
+        "Affiche l'overlay d'information"
+        self.previous_state = self.state_name
+        self.overlay_active = True
+        self.overlay_type = "INFO"
+    
+    def hide_info(self):
+        "Cache l'overlay d'information"
+        self.overlay_active = False
+        self.overlay_type = None
+        # previous_state reste intact pour le prochain affichage
     
     def load_best_score(self):
         "Charge le meilleur score depuis le fichier"

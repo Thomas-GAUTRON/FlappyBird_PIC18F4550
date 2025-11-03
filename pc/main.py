@@ -101,7 +101,7 @@ class FlappyBirdApp(tk.Tk):
                                     self.handle_space()
                         
                         elif self.state.state_name == "GAME_OVER":
-                            if line and "f" in line.lower():
+                            if line and "h" in line.lower():
                                 self.return_to_menu()
 
                         print(f"Reçu série: {line}")
@@ -139,42 +139,99 @@ class FlappyBirdApp(tk.Tk):
         "Configure tous les bindings clavier"
         # Contrôles généraux
         self.bind_all("<Key-a>", lambda e: self.return_to_menu())
-        self.bind_all("<Escape>", lambda e: self.destroy())
+        self.bind_all("<Key-A>", lambda e: self.return_to_menu())
+
+        self.bind_all("<Escape>", lambda e: self.destroy())        
+        
+        self.bind_all("<MouseWheel>", self.on_mouse_wheel)
+
+        # Info overlay
+        self.bind_all("<i>", lambda e: self.toggle_info())
+        self.bind_all("<I>", lambda e: self.toggle_info())
         
         # Sélection de mode
-        self.bind_all("<Key-c>", lambda e: self.set_mode("Button"))
-        self.bind_all("<Key-v>", lambda e: self.set_mode("Infrared"))
-        self.bind_all("<Key-b>", lambda e: self.set_mode("Potentiometer"))
-        self.bind_all("<Key-n>", lambda e: self.set_mode("Ultrasound"))
+        self.bind_all("<Key-1>", lambda e: self.set_mode("Button"))
+        self.bind_all("<Key-2>", lambda e: self.set_mode("Infrared"))
+        self.bind_all("<Key-3>", lambda e: self.set_mode("Potentiometer"))
+        self.bind_all("<Key-4>", lambda e: self.set_mode("Ultrasound"))
         
         # Gameplay (Button mode)
         self.bind_all("<space>", lambda e: self.handle_space())
     
     # ==================== Actions utilisateur ====================
     
+    def toggle_info(self):
+        "Affiche/cache l'overlay d'information"
+        if self.state.overlay_active:
+            self.state.hide_info()
+            # Reset du timer pour éviter un gros dt après la pause
+            self.state.last_tick = time.time()
+            # Effacer les éléments déjà dessinés de l’overlay
+            self.canvas.delete("info_overlay")
+        else:
+            self.state.show_info()
+        
+        self.render_screen()
+
+    
     def return_to_menu(self):
+        if self.state.overlay_active:
+            return
         "Retourne au menu"
         if self.state.state_name in ("PLAYING", "GAME_OVER"):
             self.change_state("MENU")
     
     def set_mode(self, mode_name: str):
         "Change le mode de jeu"
+        if self.state.overlay_active:   # ← ajout
+            return
         if self.state.state_name == "MENU":
             if self.state.set_mode(mode_name):
                 self.renderer.render_menu()
     
     def handle_space(self):
+        if self.state.overlay_active:
+            return
         "Démarre le jeu"
         if self.state.state_name == "MENU":
             self.change_state("PLAYING")
         "Gère l'appui sur espace (saut)"
         if self.state.state_name == "PLAYING" and self.state.selected_mode == "Button":
             self.flap()
+        if self.state.state_name == "PLAYING" and self.state.selected_mode == "Infrared":
+            self.flap()
     
     def flap(self):
         "Fait sauter l'oiseau"
         self.state.vy = self.physics.apply_flap()
     
+    def on_mouse_wheel(self, e):
+        # Active uniquement en jeu + mode Ultrasound + pas d'overlay
+        if self.state.state_name != "PLAYING" or self.state.selected_mode != "Ultrasound":
+            return
+        if self.state.overlay_active:
+            return
+
+        # Sur Windows/macOS, e.delta > 0 = molette vers le haut
+        direction = -1 if e.delta > 0 else 1  # -1 = vers le haut (y diminue), +1 = vers le bas
+        self._apply_wheel(direction)
+
+    def _apply_wheel(self, direction):
+        # Pas de déplacement par "cran" de molette
+        STEP = 30
+        self.state.bird_y += direction * STEP
+
+        # Clamp pour ne pas sortir de l'écran
+        h = self.canvas.winfo_height() or HEIGHT
+        from constants import BIRD_RADIUS
+        top = BIRD_RADIUS
+        bot = h - BIRD_RADIUS
+        if self.state.bird_y < top:
+            self.state.bird_y = top
+        elif self.state.bird_y > bot:
+            self.state.bird_y = bot
+
+
     # ==================== Gestion des états ====================
     
     def change_state(self, new_state: str):
@@ -261,11 +318,44 @@ class FlappyBirdApp(tk.Tk):
         
         return True
     
+
+    def update_ultrasound_mode(self, dt):
+        """Ultrasound: pas de gravité, juste le monde qui bouge + collisions"""
+        # PAS de self.state.vy, PAS de apply_gravity, PAS de déplacement vertical auto
+
+        # Collision avec plafond/sol (clamp + game over si tu veux conserver la règle)
+        h = self.canvas.winfo_height() or HEIGHT
+        if self.physics.check_bounds_collision(self.state.bird_y, h):
+            self.change_state("GAME_OVER")
+            return False
+
+        # Spawn / déplacement tuyaux (identique aux autres modes)
+        if self.pipes_manager.should_spawn_new_pipe():
+            self.pipes_manager.spawn_pipe_pair()
+            self.pipes_manager.mark_pipe_spawn()
+
+        score_add = self.pipes_manager.move_pipes()
+        if score_add:
+            command = "s"
+            if self.serial_connected and self.serial_port:
+                self.serial_port.write(command.encode("utf-8"))
+
+        # Collisions avec les tuyaux (identique)
+        if self.physics.check_pipe_collision(self.state.bird_y, self.state.pipes, self.canvas):
+            self.change_state("GAME_OVER")
+            return False
+
+        return True
+
+        
     # ==================== Rendu ====================
     
     def render_screen(self):
         "Affiche l'écran en fonction de l'état"
         self.canvas.delete("hud")
+        if not self.state.overlay_active:
+                self.canvas.delete("info_overlay") 
+
         w = self.canvas.winfo_width() or WIDTH
         h = self.canvas.winfo_height() or HEIGHT
         
@@ -277,15 +367,17 @@ class FlappyBirdApp(tk.Tk):
             self.renderer.draw_footer(w, h)
         
         elif self.state.state_name == "PLAYING":
-            if self.state.selected_mode == "Button":
-                self.renderer.draw_bird()
-                self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
-            else:
-                self.renderer.render_placeholder_mode()
+           
+            self.renderer.draw_bird()
+            self.renderer.update_score_hud()
+            self.renderer.update_best_hud()
         
         elif self.state.state_name == "GAME_OVER":
             self.renderer.render_game_over()
+        
+        # Overlay par-dessus si actif
+        if self.state.overlay_active and self.state.overlay_type == "INFO":
+            self.renderer.render_info_overlay()
     
     # ==================== Boucles ====================
     
@@ -294,6 +386,11 @@ class FlappyBirdApp(tk.Tk):
         now = time.time()
         dt = now - self.state.last_tick
         self.state.last_tick = now
+        
+        # Si overlay actif, on freeze la logique de jeu
+        if self.state.overlay_active:
+            self.after(FPS_MS, self.game_loop)
+            return
         
         # Animation continue du menu
         if self.state.state_name == "MENU":
@@ -320,24 +417,40 @@ class FlappyBirdApp(tk.Tk):
                 self.renderer.draw_play_background()
                 self.renderer.update_score_hud()
                 self.renderer.draw_bird()
-            
-            else:
-                # Modes non implémentés
-                self.renderer.render_placeholder_mode()
+
+            elif self.state.selected_mode == "Infrared":
+                # Mise à jour de la physique
+                if not self.update_button_mode(dt):
+                    # Game over détecté
+                    self.after(FPS_MS, self.game_loop)
+                    return
+                
+                # Rendu
+                self.renderer.draw_play_background()
+                self.renderer.update_score_hud()
+                self.renderer.draw_bird()
+
+            elif self.state.selected_mode == "Ultrasound": 
+                if not self.update_ultrasound_mode(dt):
+                    self.after(FPS_MS, self.game_loop)
+                    return
+                self.renderer.draw_play_background()
+                self.renderer.update_score_hud()
+                self.renderer.draw_bird()
         
         self.after(FPS_MS, self.game_loop)
     
     def blink_loop(self):
-        "Boucle de clignotement du texte du menu / placeholder"
+        "Boucle de clignotement du texte du menu "
         blink_targets = []
 
         # Clignotement du "Press X to start" dans le MENU
         if self.state.state_name == "MENU":
             blink_targets.append("press_start")
-
-        # Clignotement du "Press ENTER → MENU" dans le placeholder (modes non implémentés)
-        if self.state.state_name == "PLAYING" and self.state.selected_mode != "Button":
-            blink_targets.append("ph_enter")
+        
+        # Clignotement du "Press I to close" dans l'overlay INFO
+        if self.state.overlay_active and self.state.overlay_type == "INFO":
+            blink_targets.append("info_close")
 
         if blink_targets:
             self.state.blink_on = not self.state.blink_on

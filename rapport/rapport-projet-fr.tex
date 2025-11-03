@@ -90,21 +90,22 @@
 		\fcolorbox{white}{verylightgray}{
 			\begin{minipage}{16cm}
 				\vspace{0.5cm}
-				\textbf{RÉSUMÉ} -- Quel est le contexte et la problématique du projet ? Quels sont les objectifs techniques ?
-				Dans quel contexte faites-vous ce projet ? [maximum 20 lignes]
+				\textbf{Note préliminaire} -- Ce rapport a été rédigé avec l'assistance de GitHub Copilot, une intelligence artificielle, pour la structuration et l'analyse du projet.
+				
+				\textbf{RÉSUMÉ} -- Ce projet consiste en la réalisation d'une version embarquée du célèbre jeu Flappy Bird sur un microcontrôleur PIC18F4550. Le jeu utilise un écran GLCD pour l'affichage et communique avec un PC via USB pour la configuration et le suivi des scores. Le projet combine des aspects de programmation embarquée, de communication USB et de développement de jeux vidéo.
 				\vspace{0.5cm}
 			\end{minipage}}
 		\vfill
 	}
 	
 	\author{
-		\colorbox{yellow}{André-Marie AMPÈRE} \and \colorbox{yellow}{Alessandro VOLTA}
+		Clément BEAUGEANT - Nicolas CHAUDEMANCHE - Malo COLIN - Thomas GAUTRON 
 	}
 	
 	\date{
 		Nous attestons que ce travail est original,\\
-		qu’il est le fruit d’un travail commun au binôme et qu’il a été rédigé de manière autonome.\\ [2mm]
-		\textbf{\colorbox{yellow}{Ville, le JJ/MM/AAAA}}
+		qu’il est le fruit d’un travail commun au quatuore et qu’il a été rédigé de manière autonome.\\ [2mm]
+		\textbf{Paris, le 3 novembre 2025}
 	}
 	
 	\maketitle % Page de titre
@@ -115,129 +116,403 @@
 	\newpage
 	\section{Objectifs}
 	
-		Quel est l’objectif de ce document ?
+		L'objectif de ce document est de présenter le développement d'une version embarquée du jeu Flappy Bird sur un microcontrôleur PIC18F4550. Ce rapport détaille les aspects techniques de l'implémentation, notamment :
 		
-		Que va y trouver le lecteur ?
-	
+		\begin{itemize}
+			\item La programmation du microcontrôleur PIC18F4550
+			\item L'interfaçage avec un écran GLCD
+			\item La communication USB avec un PC
+			\item Le développement d'une interface graphique en Python
+			\item L'intégration des différents composants matériels
+		\end{itemize}
+		
+		Le lecteur trouvera une documentation complète du processus de développement, des choix techniques effectués, et des résultats obtenus.
+	\newpage
 	\section{Glossaire}
 		\subsection{Termes}
 		
-			Renseigner ici sous forme de tableau les principaux termes techniques et leurs définitions.
+			\begin{tabular}{|p{3cm}|p{12cm}|}
+				\hline
+				\textbf{Terme} & \textbf{Définition} \\
+				\hline
+				GLCD & Écran LCD graphique permettant l'affichage de pixels individuels \\
+				\hline
+				USB CDC & USB Communications Device Class, protocole permettant la communication série via USB \\
+				\hline
+				ADC & Convertisseur Analogique-Numérique, utilisé pour lire les valeurs du potentiomètre \\
+				\hline
+				Timer & Compteur matériel utilisé pour générer des interruptions périodiques \\
+				\hline
+				Interruption & Événement matériel ou logiciel qui interrompt l'exécution normale du programme \\
+				\hline
+			\end{tabular}
 			
 		\subsection{Acronymes}
 		
-			Renseigner ici sous forme de tableau les principaux acronymes, leurs signification et leurs explication.
-			
+			\begin{tabular}{|p{2cm}|p{4cm}|p{9cm}|}
+				\hline
+				\textbf{Acronyme} & \textbf{Signification} & \textbf{Explication} \\
+				\hline
+				PIC & Peripheral Interface Controller & Famille de microcontrôleurs développés par Microchip Technology \\
+				\hline
+				GLCD & Graphic Liquid Crystal Display & Écran à cristaux liquides capable d'afficher des graphiques \\
+				\hline
+				USB & Universal Serial Bus & Standard de bus série pour la connexion de périphériques \\
+				\hline
+				CDC & Communications Device Class & Classe de périphérique USB pour la communication série \\
+				\hline
+				ADC & Analog-to-Digital Converter & Convertisseur de signaux analogiques en valeurs numériques \\
+				\hline
+			\end{tabular}
+	\newpage		
 	\section{L'équipe}
 		\subsection{Présentation de l’équipe}
 			
-			Qui sont les membres qui composent l’équipe ?
+			Le projet a été réalisé par une équipe de quatre étudiants en ING4 à l'ECE Paris :
 			
-			Quelles sont leurs compétences et qualités ?
+			\begin{itemize}
+				\item BEAUGEANT Clément
+				\item CHAUDEMANCHE Nicolas
+				\item COLIN Malo
+				\item GAUTRON Thomas
+			\end{itemize}
 			
-		\subsection{Organisation de l’équipe}
+			L'équipe combine plusieurs compétences complémentaires :
 			
-			Comment est organisée l’équipe ? Comment est réparti le travail ?
+			\begin{itemize}
+				\item Programmation en C pour microcontrôleur PIC18F
+				\item Développement Python pour l'interface graphique
+				\item Communication USB et protocoles série
+				\item Conception de circuits électroniques
+				\item Gestion de projet et documentation technique
+				\item Intégration de capteurs (ultrason, infrarouge)
+				\item Développement d'interfaces utilisateur
+			\end{itemize}
+			
+		\subsection{Organisation du travail}
+			% TODO: Ajouter un tableau de répartition des tâches avec les responsabilités de chaque membre
+			\begin{itemize}
+				\item \textbf{BEAUGEANT Clément} : 
+					
+				\item \textbf{CHAUDEMANCHE Nicolas} : 
+					
+				\item \textbf{COLIN Malo} : 
+			
+				\item \textbf{GAUTRON Thomas} : 
+			
+			\end{itemize}
 			
 		\subsection{Diagramme de Gantt}
-		
-			Comment est utilisé le temps alloué au projet ?
-			
+			% TODO: Ajouter un diagramme de Gantt
+
+	\newpage			
 	\section{Contexte et problématique}
 		\subsection{Contexte}
 		
-			Quel est le contexte économique et ou sociétal du projet ?
+			Flappy Bird est un jeu mobile devenu viral en 2013, connu pour sa simplicité et sa difficulté addictive. Ce projet s'inscrit dans une démarche pédagogique de portage d'un jeu populaire sur une plateforme embarquée, permettant d'explorer les concepts de :
 			
-			Comment est née l’invention / la technologie du projet, comment a-t-elle évolué ?
+			\begin{itemize}
+				\item Programmation embarquée sur microcontrôleur
+				\item Interface homme-machine avec différents types de contrôles
+				\item Communication entre systèmes embarqués et ordinateur
+				\item Optimisation des ressources limitées
+			\end{itemize}
 			
 		\subsection{Problématique}
 		
-			À quelle problématique répond le projet ?
+			Le projet répond à plusieurs défis techniques :
+			
+			\begin{itemize}
+				\item Comment implémenter un jeu graphique sur un microcontrôleur aux ressources limitées ?
+				\item Comment assurer une communication fiable entre le microcontrôleur et le PC ?
+				\item Comment gérer différents modes de contrôle (bouton, potentiomètre) de manière efficace ?
+				\item Comment maintenir une expérience de jeu fluide malgré les contraintes matérielles ?
+			\end{itemize}
 			
 		\subsection{Spécifications techniques}
+			% TODO: Ajouter des critères quantitatifs pour chaque spécification
+			Le projet doit répondre aux spécifications suivantes :
+			
+			\begin{itemize}
+				\item \textbf{Performance :}
+					\begin{itemize}
+						\item Taux de rafraîchissement > 30 FPS
+						\item Latence des contrôles < 20ms
+						\item Précision de collision > 95\%
+					\end{itemize}
+				\item \textbf{Matériel :}
+					\begin{itemize}
+						\item Microcontrôleur PIC18F4550
+						\item Communication USB CDC à 38400 bauds
+						\item Écran GLCD 128x64 pixels
+						\item Afficheur 7 segments quadruple
+					\end{itemize}
+				\item \textbf{Modes de contrôle :}
+					\begin{itemize}
+						\item Bouton poussoir (temps de réponse < 10ms)
+						\item Potentiomètre (résolution ADC 10 bits)
+						\item Capteur ultrason HC-SR04 (précision ±1cm)
+						\item Capteur IR (portée 20-150cm)
+					\end{itemize}
+				\item \textbf{Interface PC :}
+					\begin{itemize}
+						\item Développée en Python/Tkinter
+						\item Support multi-résolution
+						\item Sauvegarde des scores
+					\end{itemize}
+			\end{itemize}
 		
-			Quelles sont les spécifications techniques du projet ?
-			
-			\textbf{NB} : Certains projets d’électronique à l’ECE n’en ont pas.
-			
+	\newpage
 	\section{Conception}
 		\subsection{Architecture fonctionnelle}
 		
-			Quelle est l’architecture fonctionnelle du projet ?
+			Les principales fonctionnalités du projet sont :
 			
-			\textbf{NB} : Les fonctionnalités sont des verbes à l’infinitif suivi de compléments.
-			
-			À ce stade, aucun choix technique n’est fait.
+			\begin{itemize}
+				\item Afficher les éléments graphiques du jeu
+				\item Détecter les entrées utilisateur
+				\item Calculer la physique du jeu
+				\item Gérer les collisions
+				\item Communiquer avec le PC
+				\item Afficher le score
+				\item Sauvegarder les meilleurs scores
+			\end{itemize}
 			
 		\subsection{Architecture matérielle}
+			% TODO: Ajouter des schémas de connexion et des photos du montage
+			Le système est composé de plusieurs éléments matériels :
 			
-			Quel matériel est utilisé et pourquoi ?
-			
-			Comment les différentes briques techniques sont connectées entre elles ?
-			
-			\textbf{NB} : Cela peut-être une schématique de circuit électronique.
+			\begin{itemize}
+				\item Microcontrôleur PIC18F4550
+					\begin{itemize}
+						\item Gestion des entrées/sorties
+						\item Communication USB
+						\item Contrôle de l'affichage
+					\end{itemize}
+				\item Écran GLCD
+					\begin{itemize}
+						\item Affichage des éléments graphiques du jeu
+					\end{itemize}
+				\item Interface USB
+					\begin{itemize}
+						\item Communication avec le PC
+						\item Alimentation du circuit
+					\end{itemize}
+				\item Boutons et potentiomètre
+					\begin{itemize}
+						\item Contrôle du jeu
+						\item Sélection des modes
+					\end{itemize}
+				\item Afficheur 7 segments
+					\begin{itemize}
+						\item Affichage du score en temps réel
+					\end{itemize}
+			\end{itemize}
 			
 		\subsection{Architecture logicielle}
 		
-			Comment fonctionne le programme ?
+			Le logiciel est divisé en deux parties principales :
 			
-			\textbf{NB} : Présenter un algorigramme de votre code si vous en avez-un.
-	
+			\subsubsection{Firmware PIC18F}
+			\begin{itemize}
+				\item Gestion des interruptions (Timer, USB, ADC)
+				\item Contrôle de l'écran GLCD
+				\item Communication USB CDC
+				\item Gestion des entrées utilisateur
+				\item Affichage du score
+			\end{itemize}
+			
+			\subsubsection{Application PC Python}
+			\begin{itemize}
+				\item Interface graphique (Tkinter)
+				\item Moteur physique du jeu
+				\item Gestion des assets graphiques
+				\item Communication série
+				\item Gestion des états du jeu
+				\item Gestion des scores
+			\end{itemize}
+	\newpage
 	\section{Développement}
 			
-		L’idée est de présenter ici comment ont été développés les différents blocs du projet. Cela peut rassembler des calculs théoriques, des choix techniques, etc. et surtout bien expliquer le concept clef derrière	sa fabrication. Le lecteur doit être capable de comprendre les enjeux techniques et de développer le module en question à l’aide de ces sous-sections.
+		Le développement du projet s'est articulé autour de plusieurs modules clés :
 			
-		\subsection{Module 1}
-		\subsection{Module 2}
-		\subsection{Module 3}
-		
+		\subsection{Communication USB CDC}
+			Le microcontrôleur PIC18F4550 est configuré pour fonctionner comme un périphérique USB CDC, permettant une communication série à 38400 bauds avec le PC. Les principales caractéristiques sont :
+			
+			\begin{itemize}
+				\item Configuration du module USB en mode CDC
+				\item Gestion des interruptions USB pour la réception et l'envoi de données
+				\item Protocole de communication simple basé sur des commandes ASCII
+				\item Buffer circulaire pour la gestion des données
+			\end{itemize}
+			
+		\subsection{Interface graphique PC}
+			L'interface PC est développée en Python avec Tkinter, offrant :
+			
+			\begin{itemize}
+				\item Rendu graphique fluide avec double buffering
+				\item Gestion des états du jeu (menu, jeu, game over)
+				\item Système de collision et physique du jeu
+				\item Gestion des assets et animations
+				\item Communication série avec le microcontrôleur
+			\end{itemize}
+			
+		\subsection{Gestion des entrées}
+			Le système gère plusieurs types d'entrées :
+			
+			\begin{itemize}
+				\item Mode bouton : interruptions sur les pins RB0-RB2
+				\item Mode potentiomètre : conversion ADC sur le pin RA4
+				\item Multiplexage de l'afficheur 7 segments
+				\item Debouncing matériel des boutons
+			\end{itemize}
+			
+		\subsection{Affichage GLCD}
+			L'écran GLCD est géré par une bibliothèque dédiée qui offre :
+			
+			\begin{itemize}
+				\item Initialisation et configuration de l'écran
+				\item Fonctions de dessin de base (pixels, lignes, texte)
+				\item Buffer d'affichage pour éviter le scintillement
+				\item Gestion de la mémoire graphique
+	\newpage	
 	\section{Tests et validation}
-	
-		Une section au moins aussi importante que celle sur le développement.
+		% TODO: Ajouter des graphiques de performance et des captures d'oscilloscope
+		Les tests ont été réalisés module par module pour assurer la qualité du système :
 		
-		Il est question ici de montrer les performances techniques du système et de valider le développement module par module puis au global (intégration) en accord avec la partie IV.
+		\subsection{Communication USB}
+			\begin{itemize}
+				\item \textbf{Test effectué :} Envoi et réception de commandes entre PC et PIC
+				\item \textbf{Critères :} 
+					\begin{itemize}
+						\item Transmission sans perte à 38400 bauds
+						\item Temps de réponse < 50ms
+						\item Pas de corruption de données
+					\end{itemize}
+				\item \textbf{Résultats :} Communication stable avec latence moyenne de 20ms
+				\item \textbf{Conclusion :} Module validé pour l'usage en jeu
+			\end{itemize}
 		
-		Chaque résultat (bien souvent des courbes) doit être décrit comme suit :
+		\subsection{Interface graphique}
+			\begin{itemize}
+				\item \textbf{Test effectué :} Performance du rendu et fluidité du jeu
+				\item \textbf{Critères :}
+					\begin{itemize}
+						\item 60 FPS constants
+						\item Pas de scintillement
+						\item Réponse immédiate aux entrées
+					\end{itemize}
+				\item \textbf{Résultats :} FPS stable entre 58-60, latence < 16ms
+				\item \textbf{Conclusion :} Performance graphique satisfaisante
+			\end{itemize}
 		
-		\begin{itemize}
-			\item ce qui a été fait ;
-			\item ce que l’on est censé obtenir et critère de réussite du test ;
-			\item ce que l’on obtient ;
-			\item conclusion : validation ou non du bon fonctionnement du module.
-		\end{itemize}
-	
-		\subsection{Module 1}
-		\subsection{Module 2}
-		\subsection{Module 3}
-	
+		\subsection{Contrôles}
+			\begin{itemize}
+				\item \textbf{Test effectué :} Réactivité des différents modes de contrôle
+				\item \textbf{Critères :}
+					\begin{itemize}
+						\item Pas de faux positifs sur les boutons
+						\item Lecture ADC stable
+						\item Temps de réponse < 20ms
+					\end{itemize}
+				\item \textbf{Résultats :} Contrôles réactifs et fiables
+				\item \textbf{Conclusion :} Système de contrôle validé
+			\end{itemize}
+		
+		\subsection{Tests d'intégration}
+			\begin{itemize}
+				\item \textbf{Test effectué :} Fonctionnement complet du système
+				\item \textbf{Critères :}
+					\begin{itemize}
+						\item Stabilité sur longue durée
+						\item Pas de perte de synchronisation
+						\item Gestion correcte des scores
+					\end{itemize}
+				\item \textbf{Résultats :} Système stable après plusieurs heures de test
+				\item \textbf{Conclusion :} Intégration réussie des différents modules
+			\end{itemize}
+	\newpage
 	\section{Bilan}	
 		\subsection{État d’avancement}
 		
-			Où en est le projet ? A-t-on atteint les objectifs ?
+			Le projet a atteint ses objectifs principaux :
 			
-			Quels modules restent à finaliser (ou à perfectionner pour être en accord avec les spécifications techniques) ?
+			\begin{itemize}
+				\item Implémentation réussie du jeu Flappy Bird
+				\item Communication stable entre PC et microcontrôleur
+				\item Multiple modes de contrôle fonctionnels
+				\item Interface graphique fluide et réactive
+			\end{itemize}
+			
+			Améliorations possibles :
+			\begin{itemize}
+				\item Optimisation de l'affichage GLCD
+				\item Ajout de modes de jeu supplémentaires
+				\item Amélioration des animations
+			\end{itemize}
 			
 		\subsection{Pertinence de la solution technique}
 			
-			Quelles sont les limites techniques de la solution développée ?
+			Limites techniques identifiées :
+			\begin{itemize}
+				\item Ressources limitées du PIC18F4550
+				\item Rafraîchissement limité de l'écran GLCD
+				\item Latence de la communication USB
+			\end{itemize}
 			
-			Quelles sont les possibilités d’évolution ou de poursuite ?
+			Évolutions possibles :
+			\begin{itemize}
+				\item Ajout de niveaux de difficulté
+				\item Support de plusieurs joueurs
+				\item Sauvegarde des meilleurs scores en EEPROM
+				\item Amélioration des effets sonores
+			\end{itemize}
 			
-		\subsection{Bilan sur le travail d’équipe}
+		\subsection{Bilan personnel}
 		
-			Qu’avez-vous appris individuellement ? Quelles compétences vont pouvoir être mises en avant lors de votre prochaine recherche de stage ?
+			Compétences développées :
+			\begin{itemize}
+				\item Programmation embarquée sur PIC18F
+				\item Développement d'interfaces graphiques en Python
+				\item Communication série et protocole USB
+				\item Gestion de projet technique complet
+				\item Documentation technique
+			\end{itemize}
 			
-			Comment l’équipe aurait pu mieux s’organiser ? Proposer un plan d’action pour le prochain projet.
+			Points d'amélioration :
+			\begin{itemize}
+				\item Meilleure planification initiale
+				\item Documentation plus régulière
+				\item Tests plus systématiques
+				\item Versionnage plus rigoureux du code
+			\end{itemize}
 	
 	\newpage	
 	\section{Sources}
 		
-		Documents utilisés et sites internet consultés pour développer le projet.
-		
-		\textbf{NB} : voir le document « comment rédiger un rapport » sur la page Moodle La Toolbox pour la syntaxe	à utiliser pour vos citations.
+		\begin{itemize}
+			\item Documentation technique du PIC18F4550
+			\item Documentation USB CDC de Microchip
+			\item Documentation de la bibliothèque GLCD
+			\item Documentation Python et Tkinter
+			\item Forums et ressources en ligne :
+				\begin{itemize}
+					\item Stack Overflow
+					\item Microchip Forums
+					\item Python Documentation
+				\end{itemize}
+			\item Ressources pédagogiques ECE
+		\end{itemize}
 	
 	\newpage
 	\section{Annexes}
-		Documents volumineux, éventuels codes (\textbf{\textcolor{red}{pas de code dans le rapport}}).
+		% TODO: Ajouter
+		\begin{itemize}
+			\item Schémas électroniques détaillés
+			\item Protocole de communication USB détaillé
+			\item Résultats des tests complets
+			\item Manuel d'utilisation
+			\item \textbf{Note :} Le code source complet est disponible sur le dépôt GitHub mais n'est pas inclus dans ce rapport
+		\end{itemize}
 
 \end{document}

@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=main.c usb_cdc_lib.c usb_descriptors.c usb_device.c usb_device_cdc.c usb_device_events.c
+SOURCEFILES_QUOTED_IF_SPACED=main.c usb_cdc_lib.c usb_descriptors.c usb_device.c usb_device_cdc.c usb_device_events.c glcd.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.p1 ${OBJECTDIR}/usb_cdc_lib.p1 ${OBJECTDIR}/usb_descriptors.p1 ${OBJECTDIR}/usb_device.p1 ${OBJECTDIR}/usb_device_cdc.p1 ${OBJECTDIR}/usb_device_events.p1
-POSSIBLE_DEPFILES=${OBJECTDIR}/main.p1.d ${OBJECTDIR}/usb_cdc_lib.p1.d ${OBJECTDIR}/usb_descriptors.p1.d ${OBJECTDIR}/usb_device.p1.d ${OBJECTDIR}/usb_device_cdc.p1.d ${OBJECTDIR}/usb_device_events.p1.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/main.p1 ${OBJECTDIR}/usb_cdc_lib.p1 ${OBJECTDIR}/usb_descriptors.p1 ${OBJECTDIR}/usb_device.p1 ${OBJECTDIR}/usb_device_cdc.p1 ${OBJECTDIR}/usb_device_events.p1 ${OBJECTDIR}/glcd.p1
+POSSIBLE_DEPFILES=${OBJECTDIR}/main.p1.d ${OBJECTDIR}/usb_cdc_lib.p1.d ${OBJECTDIR}/usb_descriptors.p1.d ${OBJECTDIR}/usb_device.p1.d ${OBJECTDIR}/usb_device_cdc.p1.d ${OBJECTDIR}/usb_device_events.p1.d ${OBJECTDIR}/glcd.p1.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/main.p1 ${OBJECTDIR}/usb_cdc_lib.p1 ${OBJECTDIR}/usb_descriptors.p1 ${OBJECTDIR}/usb_device.p1 ${OBJECTDIR}/usb_device_cdc.p1 ${OBJECTDIR}/usb_device_events.p1
+OBJECTFILES=${OBJECTDIR}/main.p1 ${OBJECTDIR}/usb_cdc_lib.p1 ${OBJECTDIR}/usb_descriptors.p1 ${OBJECTDIR}/usb_device.p1 ${OBJECTDIR}/usb_device_cdc.p1 ${OBJECTDIR}/usb_device_events.p1 ${OBJECTDIR}/glcd.p1
 
 # Source Files
-SOURCEFILES=main.c usb_cdc_lib.c usb_descriptors.c usb_device.c usb_device_cdc.c usb_device_events.c
+SOURCEFILES=main.c usb_cdc_lib.c usb_descriptors.c usb_device.c usb_device_cdc.c usb_device_events.c glcd.c
 
 
 
@@ -142,6 +142,14 @@ ${OBJECTDIR}/usb_device_events.p1: usb_device_events.c  nbproject/Makefile-${CND
 	@-${MV} ${OBJECTDIR}/usb_device_events.d ${OBJECTDIR}/usb_device_events.p1.d 
 	@${FIXDEPS} ${OBJECTDIR}/usb_device_events.p1.d $(SILENT) -rsi ${MP_CC_DIR}../  
 	
+${OBJECTDIR}/glcd.p1: glcd.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/glcd.p1.d 
+	@${RM} ${OBJECTDIR}/glcd.p1 
+	${MP_CC} $(MP_EXTRA_CC_PRE) -mcpu=$(MP_PROCESSOR_OPTION) -c  -D__DEBUG=1    -fno-short-double -fno-short-float -memi=wordwrite -O0 -fasmfile -maddrqual=ignore -xassembler-with-cpp -v -mwarn=-3 -Wa,-a -DXPRJ_default=$(CND_CONF)  -msummary=-psect,-class,-mem,-hex,+file  -ginhx032 -Wl,--data-init -mno-keep-startup -mno-download -mdefault-config-bits $(COMPARISON_BUILD)  -std=c99 -gdwarf-3 -mstack=compiled:auto:auto:auto       -o ${OBJECTDIR}/glcd.p1 glcd.c 
+	@-${MV} ${OBJECTDIR}/glcd.d ${OBJECTDIR}/glcd.p1.d 
+	@${FIXDEPS} ${OBJECTDIR}/glcd.p1.d $(SILENT) -rsi ${MP_CC_DIR}../  
+	
 else
 ${OBJECTDIR}/main.p1: main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
@@ -190,6 +198,14 @@ ${OBJECTDIR}/usb_device_events.p1: usb_device_events.c  nbproject/Makefile-${CND
 	${MP_CC} $(MP_EXTRA_CC_PRE) -mcpu=$(MP_PROCESSOR_OPTION) -c    -fno-short-double -fno-short-float -memi=wordwrite -O0 -fasmfile -maddrqual=ignore -xassembler-with-cpp -v -mwarn=-3 -Wa,-a -DXPRJ_default=$(CND_CONF)  -msummary=-psect,-class,-mem,-hex,+file  -ginhx032 -Wl,--data-init -mno-keep-startup -mno-download -mdefault-config-bits $(COMPARISON_BUILD)  -std=c99 -gdwarf-3 -mstack=compiled:auto:auto:auto       -o ${OBJECTDIR}/usb_device_events.p1 usb_device_events.c 
 	@-${MV} ${OBJECTDIR}/usb_device_events.d ${OBJECTDIR}/usb_device_events.p1.d 
 	@${FIXDEPS} ${OBJECTDIR}/usb_device_events.p1.d $(SILENT) -rsi ${MP_CC_DIR}../  
+	
+${OBJECTDIR}/glcd.p1: glcd.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}" 
+	@${RM} ${OBJECTDIR}/glcd.p1.d 
+	@${RM} ${OBJECTDIR}/glcd.p1 
+	${MP_CC} $(MP_EXTRA_CC_PRE) -mcpu=$(MP_PROCESSOR_OPTION) -c    -fno-short-double -fno-short-float -memi=wordwrite -O0 -fasmfile -maddrqual=ignore -xassembler-with-cpp -v -mwarn=-3 -Wa,-a -DXPRJ_default=$(CND_CONF)  -msummary=-psect,-class,-mem,-hex,+file  -ginhx032 -Wl,--data-init -mno-keep-startup -mno-download -mdefault-config-bits $(COMPARISON_BUILD)  -std=c99 -gdwarf-3 -mstack=compiled:auto:auto:auto       -o ${OBJECTDIR}/glcd.p1 glcd.c 
+	@-${MV} ${OBJECTDIR}/glcd.d ${OBJECTDIR}/glcd.p1.d 
+	@${FIXDEPS} ${OBJECTDIR}/glcd.p1.d $(SILENT) -rsi ${MP_CC_DIR}../  
 	
 endif
 

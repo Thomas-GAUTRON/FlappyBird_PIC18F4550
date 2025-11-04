@@ -17,6 +17,7 @@
       <itemPath>usb_device_local.h</itemPath>
       <itemPath>usb_hal.h</itemPath>
       <itemPath>usb_hal_pic18.h</itemPath>
+      <itemPath>glcd.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -31,6 +32,7 @@
       <itemPath>usb_device.c</itemPath>
       <itemPath>usb_device_cdc.c</itemPath>
       <itemPath>usb_device_events.c</itemPath>
+      <itemPath>glcd.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

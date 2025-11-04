@@ -35,6 +35,16 @@ GAMEOVER_TITLE_COLOR = "#FF4444"
 GAMEOVER_TEXT_COLOR = "#FFFFFF"
 GAMEOVER_HIGHLIGHT_COLOR = "#FFD700"
 
+# -- Thème Info Overlay --
+INFO_PANEL_BG = "#1a1a1a"
+INFO_PANEL_BORDER = "#FFD700"
+INFO_TITLE_FONT = ("VT323", 60, "bold")
+INFO_CONTROL_FONT = ("VT323", 35)
+INFO_KEY_LPT_COLOR = "#FFD700"
+INFO_KEY_PIC_COLOR = "#FF4444"
+INFO_DESC_COLOR = "#FFFFFF"
+INFO_CLOSE_FONT = ("VT323", 25)
+
 # -- Animations --
 MENU_ANIMATION_SPEED = 2  # vitesse d'animation du menu
 
@@ -72,4 +82,67 @@ MODE_PIPE_SKINS = {
     "Infrared": ("pipes/p_u_serda.png", "pipes/p_b_serda.png"),
     "Potentiometer": ("pipes/p_u_pouf.png", "pipes/p_b_pouf.png"),
     "Ultrasound": ("pipes/p_u_serp.png", "pipes/p_b_serp.png"),
+}
+
+# -- Contrôles Info --
+INFO_CONTROLS = {
+    "MENU": {
+        "title": "CONTROLS - MENU",
+        "controls": [
+            ("1", "Potentiometer", "Button Mode"),
+            ("2", "Potentiometer", "Infrared Mode"),
+            ("3", "Potentiometer", "Potentiometer Mode"),
+            ("4", "Potentiometer", "Ultrasound Mode"),
+            ("SPACE", "Button 1", "Start Game"),
+            ("I", "Button 2", "Toggle Info"),
+            ("ESC", "Button 3", "Quit Game"),
+        ]
+    },
+    "PLAYING": {
+        "Button": {
+            "title": "CONTROLS - BUTTON MODE",
+            "controls": [
+                ("SPACE", "Button 1", "Flap / Jump"),
+                ("A", "Button 4", "Return to Menu"),
+                ("I", "Button 2", "Show Info (Pause)"),
+                ("ESC", "Button 3", "Quit Game")
+            ]
+        },
+        "Infrared": {
+            "title": "CONTROLS - INFRARED MODE",
+            "controls": [
+                ("SPACE", "Infrared Sensor", "Control Bird"),
+                ("A", "Button 4", "Return to Menu"),
+                ("I", "Button 2", "Show Info (Pause)"),
+                ("ESC", "Button 3", "Quit Game")
+            ]
+        },
+        "Potentiometer": {
+            "title": "CONTROLS - POTENTIOMETER MODE",
+            "controls": [
+                ("_", "Digital Encoder", "Control Height"),
+                ("A", "Button 4", "Return to Menu"),
+                ("I", "Button 2", "Show Info (Pause)"),
+                ("ESC", "Button 3", "Quit Game")
+            ]
+        },
+        "Ultrasound": {
+            "title": "CONTROLS - ULTRASOUND MODE",
+            "controls": [
+                ("_", "Ultrasound Sensor", "Control Height"),
+                ("A", "Button 4", "Return to Menu"),
+                ("I", "Button 2", "Show Info (Pause)"),
+                ("ESC", "Button 3", "Quit Game")
+            ]
+        }
+    },
+    "GAME_OVER": {
+        "title": "GAME OVER - OPTIONS",
+        "controls": [
+            ("SPACE", "Button 1", "Retry Same Mode"),
+            ("A", "Button 4", "Return to Menu"),
+            ("I", "Button 2", "Toggle Info"),
+            ("ESC", "Button 3", "Quit Game")
+        ]
+    }
 }

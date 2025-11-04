@@ -10,7 +10,10 @@ from constants import (
     SCORE_FONT, SCORE_COLOR, BEST_FONT, BEST_COLOR,
     GAMEOVER_TITLE_FONT, GAMEOVER_SUBTITLE_FONT, GAMEOVER_SCORE_FONT,
     GAMEOVER_BG_COLOR, GAMEOVER_TITLE_COLOR, GAMEOVER_TEXT_COLOR,
-    GAMEOVER_HIGHLIGHT_COLOR, MENU_ANIMATION_SPEED
+    GAMEOVER_HIGHLIGHT_COLOR, MENU_ANIMATION_SPEED,
+    INFO_CONTROLS, INFO_PANEL_BG, INFO_PANEL_BORDER,
+    INFO_TITLE_FONT, INFO_CONTROL_FONT, INFO_KEY_LPT_COLOR, INFO_KEY_PIC_COLOR,
+    INFO_DESC_COLOR, INFO_CLOSE_FONT
 )
 
 
@@ -133,12 +136,12 @@ class Renderer:
                 tags=tag_text
             )
         
-        # Instructions "Press X to start"
+        # Instructions "Press space to start"
         hint_y = top_y + len(MODES) * gap_y - 50
         
         self.canvas.create_text(
             w // 2, hint_y + gap_y+30,
-            text="Press X to start",
+            text="Press SPACE to start",
             font=MENU_FONT,
             fill=MENU_COLOR,
             tags=("press_start",)
@@ -402,11 +405,134 @@ class Renderer:
         if self.state.blink_on:
             self.canvas.create_text(
                 w // 2, instructions_y,
-                text="Press ENTER to return to menu",
+                text="Press A to return to menu",
                 font=GAMEOVER_SUBTITLE_FONT,
                 fill=GAMEOVER_TEXT_COLOR,
                 tags=("instructions",)
             )
+    
+    # ==================== Info Overlay ====================
+    
+    def render_info_overlay(self):
+        "Affiche l'overlay d'information contextuel"
+        w = self.canvas.winfo_width() or WIDTH
+        h = self.canvas.winfo_height() or HEIGHT
+        
+        # Fond semi-transparent
+        self.canvas.create_rectangle(
+            0, 0, w, h,
+            fill="black",
+            stipple="gray50",
+            tags=("info_overlay",)
+        )
+        
+        # Récupération des contrôles selon le contexte
+        previous = self.state.previous_state
+        
+        if previous == "PLAYING":
+            mode = self.state.selected_mode
+            info_data = INFO_CONTROLS["PLAYING"][mode]
+        else:
+            info_data = INFO_CONTROLS[previous]
+        
+        title = info_data["title"]
+        controls = info_data["controls"]
+        
+        # Dimensions du panneau
+        panel_width = 1000
+        panel_height = 100 + len(controls) * 60 + 100  # Dynamique selon nb de contrôles
+        panel_x1 = w // 2 - panel_width // 2
+        panel_y1 = h // 2 - panel_height // 2
+        panel_x2 = w // 2 + panel_width // 2
+        panel_y2 = h // 2 + panel_height // 2
+        
+        # Ombre du panneau
+        shadow_offset = 10
+        self.canvas.create_rectangle(
+            panel_x1 + shadow_offset, panel_y1 + shadow_offset,
+            panel_x2 + shadow_offset, panel_y2 + shadow_offset,
+            fill="#000000",
+            outline="",
+            tags=("info_overlay",)
+        )
+        
+        # Panneau principal
+        self.canvas.create_rectangle(
+            panel_x1, panel_y1, panel_x2, panel_y2,
+            fill=INFO_PANEL_BG,
+            outline=INFO_PANEL_BORDER,
+            width=4,
+            tags=("info_overlay",)
+        )
+        
+        # Titre
+        title_y = panel_y1 + 60
+        self.canvas.create_text(
+            w // 2, title_y,
+            text=title,
+            font=INFO_TITLE_FONT,
+            fill=INFO_KEY_LPT_COLOR,
+            tags=("info_overlay",)
+        )
+        
+        # Ligne de séparation
+        line_y = title_y + 50
+        self.canvas.create_line(
+            panel_x1 + 50, line_y,
+            panel_x2 - 50, line_y,
+            fill=INFO_PANEL_BORDER,
+            width=2,
+            tags=("info_overlay",)
+        )
+        
+        # Liste des contrôles
+        controls_start_y = line_y + 50
+        for i, (key_lpt, key_pic, description) in enumerate(controls):
+            y = controls_start_y + i * 60
+            
+            # Touche PC (à gauche)
+            self.canvas.create_text(
+                w // 2 + 100, y,
+                text=f"[{key_lpt}]",
+                font=INFO_CONTROL_FONT,
+                fill=INFO_KEY_LPT_COLOR,
+                anchor="e",
+                tags=("info_overlay",)
+            )
+            # Touche PIC(à gauche)
+            self.canvas.create_text(
+                w // 2 + 110, y,
+                text=f"[{key_pic}]",
+                font=INFO_CONTROL_FONT,
+                fill=INFO_KEY_PIC_COLOR,
+                anchor="w",
+                tags=("info_overlay",)
+            )        
+            # Description (à droite)
+            self.canvas.create_text(
+                w // 2 - 450, y,
+                text=description,
+                font=INFO_CONTROL_FONT,
+                fill=INFO_DESC_COLOR,
+                anchor="w",
+                tags=("info_overlay",)
+            )
+        
+        # Message de fermeture (clignotant)
+        close_y = panel_y2 - 40
+        if self.state.blink_on:
+            self.canvas.create_text(
+                w // 2, close_y,
+                text="Press [I] to close",
+                font=INFO_CLOSE_FONT,
+                fill=INFO_KEY_LPT_COLOR,
+                tags=("info_overlay", "info_close"),
+            )
+        
+        # S'assurer que l'overlay est au-dessus de tout
+        self.canvas.tag_raise("info_overlay")
+    
+    # ==================== Placeholder ====================
     
     def render_placeholder_mode(self):
         "Affiche un message pour les modes non développés"

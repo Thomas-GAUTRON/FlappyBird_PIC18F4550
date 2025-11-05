@@ -198,7 +198,9 @@ class FlappyBirdApp(tk.Tk):
         "Gère l'appui sur espace (saut)"
         if self.state.state_name == "PLAYING" and self.state.selected_mode == "Button":
             self.flap()
-        if self.state.state_name == "PLAYING" and self.state.selected_mode == "Infrared":
+        elif self.state.state_name == "PLAYING" and self.state.selected_mode == "Infrared":
+            self.flap()
+        elif self.state.state_name == "PLAYING" and self.state.selected_mode == "Potentiometer":
             self.flap()
     
     def flap(self):
@@ -419,6 +421,18 @@ class FlappyBirdApp(tk.Tk):
                 self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Infrared":
+                # Mise à jour de la physique
+                if not self.update_button_mode(dt):
+                    # Game over détecté
+                    self.after(FPS_MS, self.game_loop)
+                    return
+                
+                # Rendu
+                self.renderer.draw_play_background()
+                self.renderer.update_score_hud()
+                self.renderer.draw_bird()
+
+            elif self.state.selected_mode == "Potentiometer":
                 # Mise à jour de la physique
                 if not self.update_button_mode(dt):
                     # Game over détecté

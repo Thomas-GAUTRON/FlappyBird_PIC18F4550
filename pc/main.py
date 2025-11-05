@@ -93,12 +93,12 @@ class FlappyBirdApp(tk.Tk):
                                 print(f"Valeur ADC reçue: {adc_value}")
                                 pas = 255 // len(MODES)
                                 mode_index = adc_value // pas
-                                self.set_mode(MODES[mode_index])
+                                # self.set_mode(MODES[mode_index])
 
                         elif self.state.state_name == "PLAYING":    
-                            if  self.state.selected_mode == "Button":
-                                if line and "f" in line.lower():
-                                    self.handle_space()
+                            if line and "f" in line.lower():
+                                self.handle_space()
+                                
                         
                         elif self.state.state_name == "GAME_OVER":
                             if line and "h" in line.lower():
@@ -256,6 +256,10 @@ class FlappyBirdApp(tk.Tk):
             self.reset_gameplay()
             if self.state.selected_mode == "Button":
                 command = "b"
+                if self.serial_connected and self.serial_port:
+                    self.serial_port.write(command.encode("utf-8"))
+            elif self.state.selected_mode == "Infrared":
+                command = "i"
                 if self.serial_connected and self.serial_port:
                     self.serial_port.write(command.encode("utf-8"))
         

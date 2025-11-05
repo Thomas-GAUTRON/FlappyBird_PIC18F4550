@@ -3,6 +3,7 @@
 #include "main.h"
 #include "glcd.h"
 #include "usb_cdc_lib.h"
+#include "eeprom.h"
 #include <stdio.h>
 
 void __interrupt(high_priority) irq_handle_high(void);
@@ -16,35 +17,45 @@ typedef enum
     FLAPPY_ACCUEIL,
     FLAPPY_BTN,
     FLAPPY_POTENTIOMETRE,
+    FLAPPY_INFRA,
+    FLAPPY_ULTRA
 } E_mode;
 
 uint8_t flap_event = 0;
 uint8_t ADC_event = 0;
 uint8_t num7seg = 0;
 uint8_t type = 0;
-int ADC_value;
+uint8_t ADC_value;
+uint8_t bon_infra;
 int score = 1234;
+uint8_t bs_but, bs_infra, bs_de, bs_us;
 
 E_mode current_mode = MODE_NOTHING;
 volatile unsigned char timer_count = 0;
 
 int main()
 {
+
     PORTB = 0;
     PORTD = 0;
+    TRISCbits.RC7 = 0;
+    TRISCbits.RC6 = 0;
+
     glcd_Init(GLCD_ON);
     initUSBLib();
     CDCSetBaudRate(38400); // Configurer le baudrate USB CDC à 38400 bps
     // Configuration des ports, INT0, ADC et Timer1 (assembleur inline)
+    bs_but = EEPROM_Read(100);
+    bs_infra = EEPROM_Read(101);
+    bs_de = EEPROM_Read(102);
+    bs_us = EEPROM_Read(103);
     asm(
         "; Configuration des ports\n"
-        "MOVLW 0xF0\n"
+        "MOVLW 0xF8\n"
         "MOVWF TRISA\n"
-        "MOVLW 0x0F\n"
-        "MOVWF ADCON1\n"
 
         "; Configuration INT0\n"
-        "BSF INTCON2, 7\n" /* D�sactiver pull-ups (RBPU = bit 7) */
+        "BSF INTCON2, 7\n" /* D�sactiver pull-ups (RBPU = bit 7) */
         "BSF INTCON, 7\n"  /* Activer interruptions hautes (GIEH = bit 7) */
         "BCF INTCON, 1\n"  /* Effacer flag INT0 (INT0IF = bit 1) */
         "BSF INTCON, 4\n"  /* Activer INT0 (INT0IE = bit 4) */
@@ -56,12 +67,14 @@ int main()
         "; Configuration INT2\n"
         "BCF INTCON3, 1\n" /* Effacer flag INT2 (INT2IF = bit 1) */
         "BSF INTCON3, 5\n" /* Activer INT2 (INT2IE = bit 5) */
-       
+
         "; Configuration ADC\n"
         "BCF PIR1, 6\n" // Clear ADIF (ADIF = bit 6)
         "BSF PIE1, 6\n" // Enable ADC interrupt (ADIE = bit 6)
-        "MOVLW 0x24\n"  // CHS = 9 (bits 5..2 = 1001)
+        "MOVLW 0x0D\n"  // CHS = 9 (bits 5..2 = 1001)
         "MOVWF ADCON0\n"
+        "MOVLW 0x0F\n"
+        "MOVWF ADCON1\n"
         "MOVLW 0x00\n" // ADFM = 0 (justifié à gauche) et config par défaut
         "MOVWF ADCON2\n"
         "BSF ADCON0, 0\n" // ADON = bit 0 -> ADON = 1
@@ -76,10 +89,17 @@ int main()
         "BCF PIR1, 0\n"  // Clear TMR1IF (bit 0)
         "BSF PIE1, 0\n"  // Enable TMR1IE (bit 0)
         "BSF T1CON, 0\n" // Start Timer1 (TMR1ON = bit 0)
-        );
+    );
+    CMCON = 0x07; // Désactive les comparateurs
+    TRISE = 0x00; // RE1 = sortie (buzzer)
+    PORTEbits.RE2 = 1;
 
     while (1)
     {
+        if (ADCON0bits.GO == 0 && (current_mode == FLAPPY_ACCUEIL || current_mode == FLAPPY_INFRA ))
+        {
+            ADCON0bits.GO = 1;
+        }
         type++;
         USBDeviceTasks();
         if (type == 0)
@@ -87,18 +107,18 @@ int main()
             INTCONbits.INT0F = 0;
             INTCON3bits.INT1F = 0;
             INTCON3bits.INT2F = 0;
-    
+
             INTCONbits.INT0E = 0;
             INTCON3bits.INT1E = 0;
             INTCON3bits.INT2E = 0;
-            
+
             TRISBbits.TRISB0 = 0;
             TRISBbits.TRISB1 = 0;
             TRISBbits.TRISB2 = 0;
-            
+
             PORTA = 0x0;
             writeOnGlcd();
-       
+
             PORTBbits.RB0 = 0;
             PORTBbits.RB1 = 0;
             PORTBbits.RB2 = 0;
@@ -106,16 +126,15 @@ int main()
             LATBbits.LATB1 = 0;
             LATBbits.LATB2 = 0;
             __delay_us(10);
-            
+
             TRISBbits.TRISB0 = 1;
             TRISBbits.TRISB1 = 1;
             TRISBbits.TRISB2 = 1;
-            __delay_us(10);
-            
+
             INTCONbits.INT0F = 0;
             INTCON3bits.INT1F = 0;
             INTCON3bits.INT2F = 0;
-            
+
             INTCONbits.INT0E = 1;
             INTCON3bits.INT1E = 1;
             INTCON3bits.INT2E = 1;
@@ -124,9 +143,6 @@ int main()
         {
             affiche_score();
         }
-
-        CMCON = 0x07; // Désactive les comparateurs
-        TRISE = 0x00; // RE1 = sortie (buzzer)
 
         if (isUSBReady())
         {
@@ -137,9 +153,45 @@ int main()
             {
                 if (usbReadBuffer[0] == 'a')
                 {
+                    char buffer[30];
+                    switch(current_mode){
+                        case FLAPPY_BTN:
+                            if(score > bs_but)
+                            {
+                                bs_but = score;
+                                EEPROM_Write(0x0, score);
+                            }
+                            break;
+                        case FLAPPY_INFRA:
+                            if(score > bs_infra)
+                            {
+                                bs_infra = score;
+                                EEPROM_Write(0x1, score);
+                            }
+                            break;
+                        case FLAPPY_POTENTIOMETRE:
+                            if(score > bs_de)
+                            {
+                                bs_de = score;
+                                EEPROM_Write(0x2, score);
+                            }
+                            break;
+                        case FLAPPY_ULTRA:
+                            if(score > bs_us)
+                            {
+                                bs_us = score;
+                                EEPROM_Write(0x3, score);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    
+                    sprintf(buffer, "best_score:%d-%d-%d-%d\n", 
+                            bs_but, bs_infra, bs_de, bs_us);
                     current_mode = FLAPPY_ACCUEIL;
                     score = 0;
-                    putrsUSBUSART("Accueil\n");
+                    putrsUSBUSART(buffer);
                 }
                 else if (usbReadBuffer[0] == 'b')
                 {
@@ -152,6 +204,12 @@ int main()
                     current_mode = FLAPPY_POTENTIOMETRE;
                     score = 0;
                     putrsUSBUSART("Potentiometre\n");
+                }
+                else if (usbReadBuffer[0] == 'i')
+                {
+                    current_mode = FLAPPY_INFRA;
+                    score = 0;
+                    putrsUSBUSART("Infrarouge\n");
                 }
                 else if (usbReadBuffer[0] == 's')
                 {
@@ -185,14 +243,65 @@ int main()
                     "BCF _flap_event, 2\n");
             }
 
-            if (ADC_event && (current_mode == FLAPPY_POTENTIOMETRE || current_mode == FLAPPY_ACCUEIL))
+            if (PORTCbits.RC0 == 1)
             {
-                char buffer[20];
-                sprintf(buffer, "ADC:%d\n", ADC_value);
-                putrsUSBUSART(buffer);
-                ADC_event = 0;
+                if (flap_event & 0x8)
+                {
+                    putrsUSBUSART("v\n");
+                }
+                asm(
+                    "BCF _flap_event, 3\n");
+            }
+            else
+            {
+                asm(
+                    "BSF _flap_event, 3\n");
             }
 
+            if (PORTCbits.RC1 == 1)
+            {
+                if (flap_event & 0x10)
+                {
+                    putrsUSBUSART("f\n");
+                }
+                asm(
+                    "BCF _flap_event, 4\n");
+            }
+            else
+            {
+                asm(
+                    "BSF _flap_event, 4\n");
+            }
+
+            if ((ADC_event & 0x2) && (current_mode == FLAPPY_INFRA || current_mode == FLAPPY_ACCUEIL))
+            {
+                if (current_mode == FLAPPY_INFRA)
+                {
+                    if (ADC_value > 50)
+                    {
+                        if(bon_infra == 1)
+                        {
+                            putrsUSBUSART("f\n");
+                        }
+             
+                        bon_infra = 0;
+                    }
+                    else
+                    {
+                        bon_infra = 1;
+                    }
+         
+   
+                    ADC_event = 0;
+                }
+                else
+                {
+                    char buffer[20];
+                    sprintf(buffer, "ADC:%d\n", ADC_value);
+                    //putrsUSBUSART(buffer);
+                    ADC_event = 0;
+                }
+            }
             CDCTxService();
         }
         else
@@ -238,7 +347,7 @@ void affiche_score()
         buffer_score /= 1000;
         PORTD = tab_int_to_7seg(buffer_score % 10);
     }
-    num7seg = (num7seg + 1) % 4;
+    num7seg = (num7seg + 1) % 3;
 }
 
 void writeOnGlcd()
@@ -277,13 +386,13 @@ void __interrupt(high_priority) irq_handle_high(void)
     }
 
     // Interruption INT0 (via ASM pour flags)
-    if (INTCONbits.INT0IF  && INTCONbits.INT0E)
+    if (INTCONbits.INT0IF && INTCONbits.INT0E)
     {
         asm(
             "BSF _flap_event, 0\n"
             "BCF INTCON, 1\n");
     }
-    if (INTCON3bits.INT1IF  && INTCON3bits.INT1E)
+    if (INTCON3bits.INT1IF && INTCON3bits.INT1E)
     {
 
         asm(
@@ -301,8 +410,7 @@ void __interrupt(high_priority) irq_handle_high(void)
     {
         // Clear ADIF (bit 6 of PIR1) via ASM
         asm(
-            "MOVLW 0x01\n"
-            "MOVWF _ADC_event\n"
+            "BSF _ADC_event, 1\n"
             "MOVFF ADRESH, _ADC_value\n"
             "BCF PIR1, 6\n");
     }
@@ -318,16 +426,5 @@ void __interrupt(high_priority) irq_handle_high(void)
         timer_count++;
 
         // Tous les 10 x 10ms = 100ms
-        if (timer_count >= 10)
-        {
-            timer_count = 0;
-
-            // Démarrer conversion ADC si aucune conversion en cours
-            if (ADCON0bits.GO == 0 && current_mode == FLAPPY_POTENTIOMETRE)
-            {
-                ADCON0bits.GO = 1;
-            }
-            
-        }
     }
 }

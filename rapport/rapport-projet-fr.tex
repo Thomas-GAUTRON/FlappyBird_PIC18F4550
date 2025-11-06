@@ -166,68 +166,61 @@
 			\end{tabular}
 	\newpage		
 	\section{L'équipe}
-		\subsection{Présentation de l’équipe}
-			
-			Le projet a été réalisé par une équipe de quatre étudiants en ING4 à l'ECE Paris :
-			
-			\begin{itemize}
-				\item BEAUGEANT Clément
-				\item CHAUDEMANCHE Nicolas
-				\item COLIN Malo
-				\item GAUTRON Thomas
-			\end{itemize}
-			
-			L'équipe combine plusieurs compétences complémentaires :
-			
-			\begin{itemize}
-				\item Programmation en C pour microcontrôleur PIC18F
-				\item Développement Python pour l'interface graphique
-				\item Communication USB et protocoles série
-				\item Conception de circuits électroniques
-				\item Gestion de projet et documentation technique
-				\item Intégration de capteurs (ultrason, infrarouge)
-				\item Développement d'interfaces utilisateur
-			\end{itemize}
-			
-		\subsection{Organisation du travail}
-			% TODO: Ajouter un tableau de répartition des tâches avec les responsabilités de chaque membre
-			\begin{itemize}
-				\item \textbf{BEAUGEANT Clément} : 
-					
-				\item \textbf{CHAUDEMANCHE Nicolas} : 
-					
-				\item \textbf{COLIN Malo} : 
-			
-				\item \textbf{GAUTRON Thomas} : 
-			
-			\end{itemize}
-			
-		\subsection{Diagramme de Gantt}
-			% TODO: Ajouter un diagramme de Gantt
+
+\subsection{Présentation de l’équipe}
+
+Notre équipe est composée de membres aux compétences variées, chacun apportant son expertise et ses qualités au projet :
+
+\begin{itemize}
+    \item \textbf{Thomas} : Excellent sens de l’organisation et du découpage des tâches. Très rigoureux dans le code et la gestion des versions. Esprit analytique : toujours celui qui trouve le bug que personne ne voit.
+    \item \textbf{Nicolas} : Grande polyvalence, à l’aise en hardware comme en software. Force tranquille du groupe, capable de résoudre les imprévus rapidement. Sens du détail dans les tests et les optimisations.
+    \item \textbf{Malo} : Propose toujours des idées originales pour rendre le projet plus vivant (graphismes, gameplay, etc.). A une excellente intuition utilisateur : pense à l’ergonomie et à l’expérience de jeu. Apporte une ambiance positive et motivante au groupe.
+    \item \textbf{Clément} : Très méthodique : documente tout, garde le projet propre et compréhensible. Persévérant : ne lâche jamais tant que le code ne compile pas parfaitement. Solide esprit d’équipe, toujours prêt à aider les autres sans hésiter. Bon sens critique, capable de remettre en question pour améliorer.
+\end{itemize}
+
+\subsection{Organisation du travail}
+
+\begin{itemize}
+    \item \textbf{Thomas} : S’est occupé de la partie d’intégration des différents programmes au code, de la fonctionnalité « ultrason » et également de la mémoire \textbf{EEPROM}.
+    \item \textbf{Nicolas} : S’est occupé des codes relatifs au \textbf{bouton}, à l’\textbf{infrarouge}, ainsi qu’aux \textbf{affichages 7 segments}.
+    \item \textbf{Malo} : S’est occupé de toute l’\textbf{interface graphique du jeu}, ainsi que du \textbf{GLCD}.
+    \item \textbf{Clément} : S’est occupé de toute la partie \textbf{modélisation}, ainsi que de l’\textbf{encodeur} et du \textbf{buzzer}.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\fbox{\rule{0pt}{5cm}\rule{10cm}{0pt}}
+\caption{Organisation de l’équipe}
+\end{figure}
+
+\subsection{Diagramme de Gantt}
+
+\begin{figure}[H]
+\centering
+\fbox{\rule{0pt}{5cm}\rule{10cm}{0pt}}
+\caption{Diagramme de Gantt du projet (non renseigné)}
+\end{figure}
 
 	\newpage			
 	\section{Contexte et problématique}
 		\subsection{Contexte}
-		
-			Flappy Bird est un jeu mobile devenu viral en 2013, connu pour sa simplicité et sa difficulté addictive. Ce projet s'inscrit dans une démarche pédagogique de portage d'un jeu populaire sur une plateforme embarquée, permettant d'explorer les concepts de :
-			
-			\begin{itemize}
-				\item Programmation embarquée sur microcontrôleur
-				\item Interface homme-machine avec différents types de contrôles
-				\item Communication entre systèmes embarqués et ordinateur
-				\item Optimisation des ressources limitées
-			\end{itemize}
-			
-		\subsection{Problématique}
-		
-			Le projet répond à plusieurs défis techniques :
-			
-			\begin{itemize}
-				\item Comment implémenter un jeu graphique sur un microcontrôleur aux ressources limitées ?
-				\item Comment assurer une communication fiable entre le microcontrôleur et le PC ?
-				\item Comment gérer différents modes de contrôle (bouton, potentiomètre) de manière efficace ?
-				\item Comment maintenir une expérience de jeu fluide malgré les contraintes matérielles ?
-			\end{itemize}
+
+\textit{Flappy Bird} est un jeu mobile créé en 2013 par le développeur vietnamien \textbf{Dong Nguyen}. Celui-ci s’est rapidement popularisé sur toutes les plateformes, à la manière du \textit{Jumping Dinosaur} de Google lorsque l’on est déconnecté d’Internet.  
+Le principe est simple : contrôler un petit oiseau qui doit voler entre des tuyaux sans les toucher, en tapotant l’écran pour battre des ailes.  
+Le jeu, gratuit et au style rétro 8 bits, est devenu viral début 2014 grâce à sa difficulté frustrante mais addictive.  
+
+Il est aujourd’hui le cœur de notre projet. À l’aide de la carte de programmation \textbf{PIC18F4550}, il nous est demandé de recréer une interface graphique afin de pouvoir y jouer, contrôlée par la carte et affichée sur un ordinateur. Ce projet combine donc des aspects matériels et logiciels, allant du codage bas niveau à la conception d’une interface utilisateur intuitive.
+
+\subsection{Problématique}
+
+La problématique de ce projet est la suivante :  
+\begin{quote}
+\textit{Comment, à l’aide d’une carte microcontrôleur PIC18F4550, concevoir une interface graphique fonctionnelle et interactive permettant de reproduire le jeu Flappy Bird, tout en assurant une communication fluide et réactive entre le matériel et le logiciel ?}
+\end{quote}
+
+Ce défi implique la gestion de plusieurs éléments : la lecture de capteurs (comme les capteurs infrarouges ou ultrason), la synchronisation des affichages sur écran \textbf{GLCD} et sur l’ordinateur, ainsi que la réactivité des commandes dans un environnement contraint par le matériel embarqué.
+
+
 			
 		\subsection{Spécifications techniques}
 			% TODO: Ajouter des critères quantitatifs pour chaque spécification

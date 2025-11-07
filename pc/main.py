@@ -109,6 +109,14 @@ class FlappyBirdApp(tk.Tk):
                                 self.return_to_menu()
 
                         print(f"Reçu série: {line}")
+
+            if self.state.state_name == "PLAYING":
+                # Write angle to serial based on bird_y
+                command = f"v:{self.state.vy}\n"
+                if self.serial_connected and self.serial_port:
+                    self.serial_port.write(command.encode("utf-8"))
+                    print(f"Envoyé série: {command.strip()}")
+      
             
         except Exception as e:
             print(f"Erreur de lecture série: {e}")
@@ -266,6 +274,16 @@ class FlappyBirdApp(tk.Tk):
                     self.serial_port.write(command.encode("utf-8"))
             elif self.state.selected_mode == "Infrared":
                 command = "i"
+                if self.serial_connected and self.serial_port:
+                    self.serial_port.write(command.encode("utf-8"))
+
+            elif self.state.selected_mode == "Ultrasound":
+                command = "u"
+                if self.serial_connected and self.serial_port:
+                    self.serial_port.write(command.encode("utf-8"))
+
+            elif self.state.selected_mode == "Potentiometer":
+                command = "p"
                 if self.serial_connected and self.serial_port:
                     self.serial_port.write(command.encode("utf-8"))
         

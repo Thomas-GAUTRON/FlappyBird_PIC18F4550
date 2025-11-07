@@ -18,7 +18,7 @@ void PLAY_NOTE(uint16_t period, uint16_t duration);
 void init_pins(void);
 void init_timer1(void);
 unsigned int mesurer_distance(void);
-
+int parseValue(char* buffer);
 typedef enum
 {
     MODE_NOTHING,
@@ -38,8 +38,8 @@ uint8_t ADC_value;
 uint8_t bon_infra;
 int score = 1234;
 uint8_t bs_but, bs_infra, bs_de, bs_us;
-// uint8_t distance = 0, event_dist = 0;
-
+uint8_t distance = 0, event_dist = 0;
+uint8_t vy;
 E_mode current_mode = MODE_NOTHING;
 volatile unsigned char timer_count = 0;
 
@@ -91,7 +91,8 @@ int main()
     CMCON = 0x07; // DÃ©sactive les comparateurs
     TRISE = 0x00; // RE1 = sortie (buzzer)
     PORTEbits.RE2 = 1;
-
+    init_timer1();
+    init_pins();
     while (1)
     {
         if (ADCON0bits.GO == 0 && current_mode == FLAPPY_INFRA )
@@ -209,11 +210,22 @@ int main()
                     score = 0;
                     putrsUSBUSART("Infrarouge\n");
                 }
+                else if (usbReadBuffer[0] == 'u')
+                {
+                    current_mode = FLAPPY_ULTRA;
+                    score = 0;
+                    putrsUSBUSART("Ultrason\n");
+                }
                 else if (usbReadBuffer[0] == 's')
                 {
                     score += 1;
                     PLAY_NOTE(180, 30);
                     putrsUSBUSART("Score incrÃ©mentÃ©\n");
+                }
+                else if (usbReadBuffer[0] == 'v')
+                {
+                    vy = parseValue(usbReadBuffer);
+                    
                 }
                 else
                 {
@@ -222,39 +234,32 @@ int main()
                 }
             }
 
-            if ((flap_event & 0x1) && (current_mode == FLAPPY_BTN || current_mode == FLAPPY_ACCUEIL))
+            if (flap_event & 0x1)
             {
                 putrsUSBUSART("f\n");
                 asm(
                     "BCF _flap_event, 0\n");
             }
-            if ((flap_event & 0x2) && (current_mode == FLAPPY_BTN || current_mode == FLAPPY_ACCUEIL))
+            if (flap_event & 0x2)
             {
                 putrsUSBUSART("b\n");
                 asm(
                     "BCF _flap_event, 1\n");
             }
-            if ((flap_event & 0x4) && (current_mode == FLAPPY_BTN || current_mode == FLAPPY_ACCUEIL))
+            if (flap_event & 0x4)
             {
                 putrsUSBUSART("h\n");
                 asm(
                     "BCF _flap_event, 2\n");
             }
             
-           /* if(current_mode == FLAPPY_ULTRA) {
+            if(current_mode == FLAPPY_ULTRA) {
                 distance = mesurer_distance();
-                if (distance < 6) {
-                    if(event_dist)
-                    {
-                        putrsUSBUSART("u\n");
-                    }
-                    event_dist = 0;
-                }
-                else{
-                    event_dist = 1;
-                }
+                char buffer[20];
+                sprintf(buffer, "d:%d\n", distance);
+                putrsUSBUSART(buffer);
                     
-            }*/
+            }
 
             if (PORTCbits.RC0 == 1)
             {
@@ -352,9 +357,13 @@ void affiche_score()
 
 void writeOnGlcd()
 {
+    glcd_FillScreen(GLCD_BLUE);
     glcd_SetCursor(1, 0);
-    glcd_WriteString("HELLO", 5, F8X8, GLCD_WHITE);
-    //  glcd_DrawLine(0, 50, 127, 100, GLCD_WHITE);
+    if(current_mode == FLAPPY_ACCUEIL) {
+        glcd_WriteString("FLAPPY BIRD", 11, F8X8, GLCD_WHITE);
+    } else{
+        glcd_DrawLine(0, 32, 10, 32 + vy, GLCD_WHITE);
+    }
 }
 
 void DELAY(uint16_t count)
@@ -376,43 +385,42 @@ void PLAY_NOTE(uint16_t period, uint16_t duration)
         DELAY(period);
     }
 }
-/*
+
 void init_pins(void) {
     TRIG_TRIS = 0;  // TRIGGER en sortie
-    ECHO_TRIS = 1;  // ECHO en entrée
+    ECHO_TRIS = 1;  // ECHO en entrï¿½e
     TRIGGER = 0;
 }
 
 void init_timer1(void) {
-    T1CON = 0x00;   // Timer1 désactivé, prescaler 1:1
+    T1CON = 0x00;   // Timer1 dï¿½sactivï¿½, prescaler 1:1
     TMR1H = 0;
     TMR1L = 0;
 }
 
 unsigned int mesurer_distance(void) {
     unsigned int temps_us = 0;
-    unsigned int distance = 0;
     
-    // 1. Envoyer une impulsion de 10µs sur TRIGGER
+    // 1. Envoyer une impulsion de 10ï¿½s sur TRIGGER
     TRIGGER = 1;
     __delay_us(10);
     TRIGGER = 0;
     
-    // 2. Attendre que ECHO passe à HIGH (timeout 30ms)
+    // 2. Attendre que ECHO passe ï¿½ HIGH (timeout 30ms)
     unsigned int timeout = 0;
     while(ECHO == 0 && timeout < 3000) {
         __delay_us(10);
         timeout++;
     }
     
-    if(timeout >= 3000) return 0; // Timeout, pas d'écho
+    if(timeout >= 3000) return 0; // Timeout, pas d'ï¿½cho
     
-    // 3. Démarrer le Timer1
+    // 3. Dï¿½marrer le Timer1
     TMR1H = 0;
     TMR1L = 0;
     T1CONbits.TMR1ON = 1;
     
-    // 4. Attendre que ECHO passe à LOW (timeout 30ms)
+    // 4. Attendre que ECHO passe ï¿½ LOW (timeout 30ms)
     timeout = 0;
     while(ECHO == 1 && timeout < 3000) {
         __delay_us(10);
@@ -420,23 +428,33 @@ unsigned int mesurer_distance(void) {
         if(TMR1H > 0xFF) break; // Overflow protection
     }
     
-    // 5. Arrêter le Timer1
+    // 5. Arrï¿½ter le Timer1
     T1CONbits.TMR1ON = 0;
     
     // 6. Lire la valeur du timer
     temps_us = (TMR1H << 8) | TMR1L;
     
     // 7. Calculer la distance
-    // À 48MHz avec prescaler 1:1, chaque tick = 1/12 µs
-    // temps_us représente le temps en ticks
-    temps_us = temps_us / 12;  // Conversion en µs réels
+    return temps_us / 204;
+}
+
+int parseValue(char* buffer) {
+    int value = 0;
+    int i = 2; // Commencer aprï¿½s "v:"
+    int isNegative = 0;
     
-    // Distance (cm) = temps(µs) / 58
-    // (vitesse son = 340 m/s, aller-retour divisé par 2)
-    distance = temps_us / 58;
+    if (buffer[i] == '-') {
+        isNegative = 1;
+        i++;
+    }
     
-    return distance;
-}*/
+    while (buffer[i] >= '0' && buffer[i] <= '9') {
+        value = value * 10 + (buffer[i] - '0');
+        i++;
+    }
+    
+    return isNegative ? -value : value;
+}
 
 void __interrupt(high_priority) irq_handle_high(void)
 {

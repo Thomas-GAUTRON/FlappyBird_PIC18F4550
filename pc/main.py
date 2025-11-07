@@ -95,9 +95,13 @@ class FlappyBirdApp(tk.Tk):
                                 mode_index = adc_value // pas
                                 # self.set_mode(MODES[mode_index])
 
-                        elif self.state.state_name == "PLAYING":    
-                            if line and "f" in line.lower():
-                                self.handle_space()
+                        elif self.state.state_name == "PLAYING":
+                            if self.state.selected_mode == "Infrared" or self.state.selected_mode == "Button":    
+                                if line and "f" in line.lower():
+                                    self.handle_space()
+                            elif self.state.selected_mode == "Potentiometer":
+                                if line and "v" in line.lower():
+                                    self.handle_space()
                                 
                         
                         elif self.state.state_name == "GAME_OVER":

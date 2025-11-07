@@ -6,10 +6,18 @@
 #include "eeprom.h"
 #include <stdio.h>
 
+#define TRIGGER LATCbits.LATC7
+#define ECHO PORTCbits.RC6
+#define TRIG_TRIS TRISCbits.TRISC7
+#define ECHO_TRIS TRISCbits.TRISC6
+
 void __interrupt(high_priority) irq_handle_high(void);
 void affiche_score(void);
 void writeOnGlcd(void);
 void PLAY_NOTE(uint16_t period, uint16_t duration);
+void init_pins(void);
+void init_timer1(void);
+unsigned int mesurer_distance(void);
 
 typedef enum
 {
@@ -22,6 +30,7 @@ typedef enum
 } E_mode;
 
 uint8_t flap_event = 0;
+uint8_t event_C0, event_C1;
 uint8_t ADC_event = 0;
 uint8_t num7seg = 0;
 uint8_t type = 0;
@@ -29,13 +38,13 @@ uint8_t ADC_value;
 uint8_t bon_infra;
 int score = 1234;
 uint8_t bs_but, bs_infra, bs_de, bs_us;
+// uint8_t distance = 0, event_dist = 0;
 
 E_mode current_mode = MODE_NOTHING;
 volatile unsigned char timer_count = 0;
 
 int main()
 {
-
     PORTB = 0;
     PORTD = 0;
     TRISCbits.RC7 = 0;
@@ -78,17 +87,6 @@ int main()
         "MOVLW 0x00\n" // ADFM = 0 (justifiÃ© Ã  gauche) et config par dÃ©faut
         "MOVWF ADCON2\n"
         "BSF ADCON0, 0\n" // ADON = bit 0 -> ADON = 1
-
-        "; Configuration Timer1\n"
-        "MOVLW 0xB0\n" // RD16 = 1, T1CKPS = 0b11 => 0x80 + 0x30 = 0xB0
-        "MOVWF T1CON\n"
-        "MOVLW 0xC5\n"
-        "MOVWF TMR1H\n"
-        "MOVLW 0x68\n"
-        "MOVWF TMR1L\n"
-        "BCF PIR1, 0\n"  // Clear TMR1IF (bit 0)
-        "BSF PIE1, 0\n"  // Enable TMR1IE (bit 0)
-        "BSF T1CON, 0\n" // Start Timer1 (TMR1ON = bit 0)
     );
     CMCON = 0x07; // DÃ©sactive les comparateurs
     TRISE = 0x00; // RE1 = sortie (buzzer)
@@ -96,7 +94,7 @@ int main()
 
     while (1)
     {
-        if (ADCON0bits.GO == 0 && (current_mode == FLAPPY_ACCUEIL || current_mode == FLAPPY_INFRA ))
+        if (ADCON0bits.GO == 0 && current_mode == FLAPPY_INFRA )
         {
             ADCON0bits.GO = 1;
         }
@@ -159,28 +157,28 @@ int main()
                             if(score > bs_but)
                             {
                                 bs_but = score;
-                                EEPROM_Write(0x0, score);
+                                EEPROM_Write(100, score);
                             }
                             break;
                         case FLAPPY_INFRA:
                             if(score > bs_infra)
                             {
                                 bs_infra = score;
-                                EEPROM_Write(0x1, score);
+                                EEPROM_Write(101, score);
                             }
                             break;
                         case FLAPPY_POTENTIOMETRE:
                             if(score > bs_de)
                             {
                                 bs_de = score;
-                                EEPROM_Write(0x2, score);
+                                EEPROM_Write(102, score);
                             }
                             break;
                         case FLAPPY_ULTRA:
                             if(score > bs_us)
                             {
                                 bs_us = score;
-                                EEPROM_Write(0x3, score);
+                                EEPROM_Write(103, score);
                             }
                             break;
                         default:
@@ -242,42 +240,51 @@ int main()
                 asm(
                     "BCF _flap_event, 2\n");
             }
+            
+           /* if(current_mode == FLAPPY_ULTRA) {
+                distance = mesurer_distance();
+                if (distance < 6) {
+                    if(event_dist)
+                    {
+                        putrsUSBUSART("u\n");
+                    }
+                    event_dist = 0;
+                }
+                else{
+                    event_dist = 1;
+                }
+                    
+            }*/
 
             if (PORTCbits.RC0 == 1)
             {
-                if (flap_event & 0x8)
+                if (event_C0)
                 {
                     putrsUSBUSART("v\n");
                 }
-                asm(
-                    "BCF _flap_event, 3\n");
+                event_C0 = 0;
             }
             else
             {
-                asm(
-                    "BSF _flap_event, 3\n");
+                event_C0 = 1;
             }
 
             if (PORTCbits.RC1 == 1)
             {
-                if (flap_event & 0x10)
+                if (event_C1)
                 {
                     putrsUSBUSART("f\n");
                 }
-                asm(
-                    "BCF _flap_event, 4\n");
+               event_C1 = 0;
             }
             else
             {
-                asm(
-                    "BSF _flap_event, 4\n");
+                event_C1 = 1;
             }
 
-            if ((ADC_event & 0x2) && (current_mode == FLAPPY_INFRA || current_mode == FLAPPY_ACCUEIL))
+            if ((ADC_event & 0x2) && current_mode == FLAPPY_INFRA)
             {
-                if (current_mode == FLAPPY_INFRA)
-                {
-                    if (ADC_value > 50)
+                if (ADC_value > 50)
                     {
                         if(bon_infra == 1)
                         {
@@ -293,14 +300,7 @@ int main()
          
    
                     ADC_event = 0;
-                }
-                else
-                {
-                    char buffer[20];
-                    sprintf(buffer, "ADC:%d\n", ADC_value);
-                    //putrsUSBUSART(buffer);
-                    ADC_event = 0;
-                }
+                
             }
             CDCTxService();
         }
@@ -376,6 +376,67 @@ void PLAY_NOTE(uint16_t period, uint16_t duration)
         DELAY(period);
     }
 }
+/*
+void init_pins(void) {
+    TRIG_TRIS = 0;  // TRIGGER en sortie
+    ECHO_TRIS = 1;  // ECHO en entrée
+    TRIGGER = 0;
+}
+
+void init_timer1(void) {
+    T1CON = 0x00;   // Timer1 désactivé, prescaler 1:1
+    TMR1H = 0;
+    TMR1L = 0;
+}
+
+unsigned int mesurer_distance(void) {
+    unsigned int temps_us = 0;
+    unsigned int distance = 0;
+    
+    // 1. Envoyer une impulsion de 10µs sur TRIGGER
+    TRIGGER = 1;
+    __delay_us(10);
+    TRIGGER = 0;
+    
+    // 2. Attendre que ECHO passe à HIGH (timeout 30ms)
+    unsigned int timeout = 0;
+    while(ECHO == 0 && timeout < 3000) {
+        __delay_us(10);
+        timeout++;
+    }
+    
+    if(timeout >= 3000) return 0; // Timeout, pas d'écho
+    
+    // 3. Démarrer le Timer1
+    TMR1H = 0;
+    TMR1L = 0;
+    T1CONbits.TMR1ON = 1;
+    
+    // 4. Attendre que ECHO passe à LOW (timeout 30ms)
+    timeout = 0;
+    while(ECHO == 1 && timeout < 3000) {
+        __delay_us(10);
+        timeout++;
+        if(TMR1H > 0xFF) break; // Overflow protection
+    }
+    
+    // 5. Arrêter le Timer1
+    T1CONbits.TMR1ON = 0;
+    
+    // 6. Lire la valeur du timer
+    temps_us = (TMR1H << 8) | TMR1L;
+    
+    // 7. Calculer la distance
+    // À 48MHz avec prescaler 1:1, chaque tick = 1/12 µs
+    // temps_us représente le temps en ticks
+    temps_us = temps_us / 12;  // Conversion en µs réels
+    
+    // Distance (cm) = temps(µs) / 58
+    // (vitesse son = 340 m/s, aller-retour divisé par 2)
+    distance = temps_us / 58;
+    
+    return distance;
+}*/
 
 void __interrupt(high_priority) irq_handle_high(void)
 {
@@ -413,18 +474,5 @@ void __interrupt(high_priority) irq_handle_high(void)
             "BSF _ADC_event, 1\n"
             "MOVFF ADRESH, _ADC_value\n"
             "BCF PIR1, 6\n");
-    }
-
-    // Interruption Timer1 - toutes les ~10ms
-    else if (PIR1bits.TMR1IF)
-    {
-        // Recharger Timer1
-        TMR1H = 0xC5;
-        TMR1L = 0x68;
-        PIR1bits.TMR1IF = 0;
-
-        timer_count++;
-
-        // Tous les 10 x 10ms = 100ms
     }
 }

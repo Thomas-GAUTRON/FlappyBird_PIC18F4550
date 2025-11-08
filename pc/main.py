@@ -85,28 +85,44 @@ class FlappyBirdApp(tk.Tk):
                         line, buffer = buffer.split('\n', 1)
                         line = line.strip()
                         if self.state.state_name == "MENU":
-                            if line and "f" in line.lower():
+                            if line and "j" in line.lower():
                                 self.handle_space()
-                            elif line and "adc" in line.lower():
-                                value = line.split(":")[-1].strip()
-                                adc_value = int(value)
-                                print(f"Valeur ADC reçue: {adc_value}")
-                                pas = 255 // len(MODES)
-                                mode_index = adc_value // pas
-                                # self.set_mode(MODES[mode_index])
+                            elif line and "h" in line.lower():
+                                # changer de mode
+                                next_mode_index = (MODES.index(self.state.selected_mode) + 1) % len(MODES)
+                                self.set_mode(MODES[next_mode_index])
+                            elif line and "best_score" in line.lower():
+                                score = line.split(':')[1]
+                                for i, part in enumerate(score.split('-')):
+                                    best_score_part = int(part)
+                                    # TODO: stocker best_score_part pour chaque mode
+                                    
 
                         elif self.state.state_name == "PLAYING":
-                            if self.state.selected_mode == "Infrared" or self.state.selected_mode == "Button":    
+                            if self.state.selected_mode == "Button":    
                                 if line and "f" in line.lower():
+                                    self.handle_space()
+                            if self.state.selected_mode == "Infrared":
+                                if line and "i" in line.lower():
                                     self.handle_space()
                             elif self.state.selected_mode == "Potentiometer":
                                 if line and "v" in line.lower():
                                     self.handle_space()
+                            elif self.state.selected_mode == "Ultrasound":
+                                if line and "u" in line.lower():
+                                    self.handle_space()
+                            if line and "h" in line.lower():
+                                self.return_to_menu()
                                 
                         
                         elif self.state.state_name == "GAME_OVER":
                             if line and "h" in line.lower():
                                 self.return_to_menu()
+                            if line and "j" in line.lower():
+                                self.change_state("PLAYING")
+                        
+                        if  line == "b":
+                            self.toggle_info()
 
                         print(f"Reçu série: {line}")
 
@@ -214,6 +230,8 @@ class FlappyBirdApp(tk.Tk):
             self.flap()
         elif self.state.state_name == "PLAYING" and self.state.selected_mode == "Potentiometer":
             self.flap()
+        elif self.state.state_name == "PLAYING" and self.state.selected_mode == "Ultrasound":
+            self.flap()
     
     def flap(self):
         "Fait sauter l'oiseau"
@@ -262,6 +280,10 @@ class FlappyBirdApp(tk.Tk):
         if new_state == "MENU":
             self.state.menu_animation_offset = 0
             command = "a"
+            if self.serial_connected and self.serial_port:
+                self.serial_port.write(command.encode("utf-8"))
+        if new_state == "GAME_OVER":
+            command = "g"
             if self.serial_connected and self.serial_port:
                 self.serial_port.write(command.encode("utf-8"))
                 
@@ -350,6 +372,8 @@ class FlappyBirdApp(tk.Tk):
     def update_ultrasound_mode(self, dt):
         """Ultrasound: pas de gravité, juste le monde qui bouge + collisions"""
         # PAS de self.state.vy, PAS de apply_gravity, PAS de déplacement vertical auto
+        self.state.vy = self.physics.apply_gravity(self.state.vy)
+        self.state.bird_y += self.state.vy
 
         # Collision avec plafond/sol (clamp + game over si tu veux conserver la règle)
         h = self.canvas.winfo_height() or HEIGHT

@@ -26,7 +26,8 @@ typedef enum
     FLAPPY_BTN,
     FLAPPY_POTENTIOMETRE,
     FLAPPY_INFRA,
-    FLAPPY_ULTRA
+    FLAPPY_ULTRA,
+    FLAPPY_GAME_OVER
 } E_mode;
 
 uint8_t flap_event = 0;
@@ -192,6 +193,11 @@ int main()
                     score = 0;
                     putrsUSBUSART(buffer);
                 }
+                else if(usbReadBuffer[0] == 'g')
+                {
+                    current_mode = FLAPPY_GAME_OVER;
+                    putrsUSBUSART("GAME OVER\n");
+                }
                 else if (usbReadBuffer[0] == 'b')
                 {
                     current_mode = FLAPPY_BTN;
@@ -208,7 +214,7 @@ int main()
                 {
                     current_mode = FLAPPY_INFRA;
                     score = 0;
-                    putrsUSBUSART("Infrarouge\n");
+                    putrsUSBUSART("Infraroug*e\n");
                 }
                 else if (usbReadBuffer[0] == 'u')
                 {
@@ -236,7 +242,7 @@ int main()
 
             if (flap_event & 0x1)
             {
-                putrsUSBUSART("f\n");
+                putrsUSBUSART("j\n");
                 asm(
                     "BCF _flap_event, 0\n");
             }
@@ -255,10 +261,10 @@ int main()
             
             if(current_mode == FLAPPY_ULTRA) {
                 distance = mesurer_distance();
-                char buffer[20];
-                sprintf(buffer, "d:%d\n", distance);
-                putrsUSBUSART(buffer);
-                    
+                if(distance > 100){
+                    putrsUSBUSART("u\n");
+                }
+         
             }
 
             if (PORTCbits.RC0 == 1)
@@ -293,7 +299,7 @@ int main()
                     {
                         if(bon_infra == 1)
                         {
-                            putrsUSBUSART("f\n");
+                            putrsUSBUSART("i\n");
                         }
              
                         bon_infra = 0;
@@ -301,9 +307,7 @@ int main()
                     else
                     {
                         bon_infra = 1;
-                    }
-         
-   
+                    }   
                     ADC_event = 0;
                 
             }
@@ -359,9 +363,13 @@ void writeOnGlcd()
 {
     glcd_FillScreen(GLCD_BLUE);
     glcd_SetCursor(1, 0);
-    if(current_mode == FLAPPY_ACCUEIL) {
+    if(current_mode == FLAPPY_ACCUEIL || current_mode == MODE_NOTHING){
         glcd_WriteString("FLAPPY BIRD", 11, F8X8, GLCD_WHITE);
-    } else{
+    } 
+    else if (current_mode == FLAPPY_GAME_OVER){
+        glcd_WriteString("GAME OVER", 9, F8X8, GLCD_WHITE);
+    }
+    else{
         glcd_DrawLine(0, 32, 10, 32 + vy, GLCD_WHITE);
     }
 }
@@ -408,12 +416,12 @@ unsigned int mesurer_distance(void) {
     
     // 2. Attendre que ECHO passe � HIGH (timeout 30ms)
     unsigned int timeout = 0;
-    while(ECHO == 0 && timeout < 3000) {
+    while(ECHO == 0 && timeout < 300) {
         __delay_us(10);
         timeout++;
     }
     
-    if(timeout >= 3000) return 0; // Timeout, pas d'�cho
+    if(timeout >= 300) return 100; // Timeout, pas d'�cho
     
     // 3. D�marrer le Timer1
     TMR1H = 0;
@@ -422,7 +430,7 @@ unsigned int mesurer_distance(void) {
     
     // 4. Attendre que ECHO passe � LOW (timeout 30ms)
     timeout = 0;
-    while(ECHO == 1 && timeout < 3000) {
+    while(ECHO == 1 && timeout < 300) {
         __delay_us(10);
         timeout++;
         if(TMR1H > 0xFF) break; // Overflow protection
@@ -435,7 +443,7 @@ unsigned int mesurer_distance(void) {
     temps_us = (TMR1H << 8) | TMR1L;
     
     // 7. Calculer la distance
-    return temps_us / 204;
+    return  (temps_us * 17) / 200;
 }
 
 int parseValue(char* buffer) {

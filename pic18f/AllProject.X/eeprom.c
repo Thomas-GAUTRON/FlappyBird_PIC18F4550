@@ -1,5 +1,5 @@
 #include <xc.h>
-// Fonction pour écrire dans l'EEPROM
+// Fonction pour ï¿½crire dans l'EEPROM
 void EEPROM_Write(unsigned char adresse, unsigned char donnee) {
     EEADR = adresse;
     EEDATA = donnee;

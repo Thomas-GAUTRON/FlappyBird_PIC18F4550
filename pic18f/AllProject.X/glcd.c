@@ -413,9 +413,10 @@ void glcd_WriteByte(glcd_side_t side, uint8_t data)
     WR_DATA = data; // Placement des donn?es sur le registre du GLCD
 
     GLCD_E = 1; // Passage de E de 0 ? 1
-    __delay_us(1);
+    asm("nop");
+    asm("nop");
     GLCD_E = 0; // Passage de E de 1 ? 0
-    __delay_us(1);
+  //  __delay_us(1);
     // Le GLCD r?cup?re les donn?es !
 
     GLCD_CS1 = 0;

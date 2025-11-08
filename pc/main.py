@@ -72,6 +72,7 @@ class FlappyBirdApp(tk.Tk):
             self.serial_connected = False
 
     def _read_serial(self):
+        global saute
         if not self.serial_connected or self.serial_port is None:
             return
         try:
@@ -110,9 +111,17 @@ class FlappyBirdApp(tk.Tk):
                                     self.handle_space()
                             elif self.state.selected_mode == "Ultrasound":
                                 if line and "u" in line.lower():
-                                    self.handle_space()
+                                    num = line.split(':')[1]
+                                    num = int(num.split(' ')[1])
+                                    if(num< 70):
+                                        if saute:
+                                            self.handle_space()
+                                        saute =False
+                                    else:
+                                        saute = True
                             if line and "h" in line.lower():
                                 self.return_to_menu()
+                            
                                 
                         
                         elif self.state.state_name == "GAME_OVER":
@@ -123,6 +132,9 @@ class FlappyBirdApp(tk.Tk):
                         
                         if  line == "b":
                             self.toggle_info()
+                        elif line == "q":
+                            # self.destroy()
+                            pass
 
                         print(f"Reçu série: {line}")
 

@@ -261,9 +261,9 @@ int main()
             
             if(current_mode == FLAPPY_ULTRA) {
                 distance = mesurer_distance();
-                if(distance > 100){
-                    putrsUSBUSART("u\n");
-                }
+                char buffer[20];
+                sprintf(buffer, "u: %d cm\n", distance);
+                putrsUSBUSART(buffer);
          
             }
 

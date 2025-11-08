@@ -69,12 +69,13 @@ PIPE_CENTER_MAX_FRAC = 0.70
 PIPE_CENTER_DELTA_MINF = 0.20
 
 PIPE_WIDTH = 135
-PIPE_GAP_BASE = 210
-PIPE_GAP_MIN = 350
+PIPE_GAP_BASE   = 350   # taille du trou au départ (pixels) — facile
+PIPE_GAP_MIN    = 200   # taille minimale atteinte avec la difficulté — dur
+PIPE_GAP_JITTER = 40    # +/- aléatoire autour de la cible (évite la monotonie)
+
 PIPE_SPEED_BASE = 20.0
 PIPE_SPEED_MAX = 20.0
 PIPE_SPAWN_EVERY_MS = 1200
-PIPE_GAP_JITTER = 100
 
 # -- Sprite des tuyaux --
 MODE_PIPE_SKINS = {

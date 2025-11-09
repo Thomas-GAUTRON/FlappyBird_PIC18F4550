@@ -60,7 +60,7 @@ class FlappyBirdApp(tk.Tk):
      # ================== Série ==================
     def _init_serial(self):
         try:
-            self.serial_port = serial.Serial('COM8', 38400, timeout=0.1)
+            self.serial_port = serial.Serial('COM5', 38400, timeout=0.1)
             self.serial_connected = True
             print("Connexion série établie.")
             # Démarre la lecture en continu
@@ -208,6 +208,9 @@ class FlappyBirdApp(tk.Tk):
             self.state.last_tick = time.time()
             # Effacer les éléments déjà dessinés de l’overlay
             self.canvas.delete("info_overlay")
+
+            self.pipes_manager.mark_pipe_spawn()
+
         else:
             self.state.show_info()
         
@@ -262,7 +265,7 @@ class FlappyBirdApp(tk.Tk):
 
     def _apply_wheel(self, direction):
         # Pas de déplacement par "cran" de molette
-        STEP = 30
+        STEP = 20
         self.state.bird_y += direction * STEP
 
         # Clamp pour ne pas sortir de l'écran
@@ -431,10 +434,12 @@ class FlappyBirdApp(tk.Tk):
             self.renderer.draw_footer(w, h)
         
         elif self.state.state_name == "PLAYING":
-           
+            # Rendu
+            self.renderer.draw_play_background()
             self.renderer.draw_bird()
             self.renderer.update_score_hud()
             self.renderer.update_best_hud()
+
         
         elif self.state.state_name == "GAME_OVER":
             self.renderer.render_game_over()
@@ -479,8 +484,10 @@ class FlappyBirdApp(tk.Tk):
                 
                 # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.update_score_hud()
                 self.renderer.draw_bird()
+                self.renderer.update_score_hud()
+                self.renderer.update_best_hud()
+
 
             elif self.state.selected_mode == "Infrared":
                 # Mise à jour de la physique
@@ -491,8 +498,10 @@ class FlappyBirdApp(tk.Tk):
                 
                 # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.update_score_hud()
                 self.renderer.draw_bird()
+                self.renderer.update_score_hud()
+                self.renderer.update_best_hud()
+
 
             elif self.state.selected_mode == "Potentiometer":
                 # Mise à jour de la physique
@@ -503,16 +512,22 @@ class FlappyBirdApp(tk.Tk):
                 
                 # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.update_score_hud()
                 self.renderer.draw_bird()
+                self.renderer.update_score_hud()
+                self.renderer.update_best_hud()
+
 
             elif self.state.selected_mode == "Ultrasound": 
                 if not self.update_ultrasound_mode(dt):
                     self.after(FPS_MS, self.game_loop)
                     return
+                
+                # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.update_score_hud()
                 self.renderer.draw_bird()
+                self.renderer.update_score_hud()
+                self.renderer.update_best_hud()
+
         
         self.after(FPS_MS, self.game_loop)
     

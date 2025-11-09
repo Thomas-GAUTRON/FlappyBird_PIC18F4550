@@ -107,16 +107,6 @@ class Renderer:
         self.canvas.delete("best_menu")
         self.canvas.delete("controls")
         
-        # Affichage du meilleur score en haut à droite
-        self.canvas.create_text(
-            w - 20, 20,
-            text=f"BEST: {self.state.best_score}",
-            font=BEST_FONT,
-            fill=MENU_COLOR,
-            anchor="ne",
-            tags=("best_menu",)
-        )
-        
         # Items de menu
         for i, name in enumerate(MODES):
             y = top_y + i * gap_y

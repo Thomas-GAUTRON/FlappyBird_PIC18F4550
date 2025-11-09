@@ -318,7 +318,7 @@ class Renderer:
 
         # NEW BEST ?
         best_block_y = score_y + 120
-        is_new_best = self.state.score >= getattr(self.state, "best_score", 0) and self.state.score > 0
+        is_new_best = self.state.score >= self.state.best_scores[self.state.selected_mode] and self.state.score > 0
         if is_new_best:
             self.canvas.create_text(w // 2, best_block_y - 34, text="★ NEW BEST! ★",
             font=(GAMEOVER_SUBTITLE_FONT[0], GAMEOVER_SUBTITLE_FONT[1], "bold"),

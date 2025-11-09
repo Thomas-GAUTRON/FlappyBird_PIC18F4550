@@ -1,4 +1,5 @@
 # main.py
+
 """
 Fichier principal de Flappy Bird
 Point d'entrée de l'application
@@ -68,7 +69,7 @@ class FlappyBirdApp(tk.Tk):
     # ================== Série ==================
     def _init_serial(self):
         try:
-            self.serial_port = serial.Serial('COM5' , 38400, timeout=0.1)
+            self.serial_port = serial.Serial('COM8' , 38400, timeout=0.1)
             self.serial_connected = True
             print("Connexion série établie.")
             # Démarre la lecture en continu
@@ -242,7 +243,7 @@ class FlappyBirdApp(tk.Tk):
         
         # Démarrer le jeu depuis le menu
         if self.state.state_name == "MENU":
-            self.change_state("PLAYING")
+            self.change_state("PLAYING")    
         
         # Gérer le saut pendant le jeu
         elif self.state.state_name == "PLAYING":
@@ -297,7 +298,7 @@ class FlappyBirdApp(tk.Tk):
     def start_replay_playback(self):
         "Démarre la lecture du replay"
         if self.replay.start_playback():
-            self.state.set_state("REPLAY")
+            self.change_state("REPLAY")
             self.reset_replay_display()
             self.render_screen()
 
@@ -372,7 +373,8 @@ class FlappyBirdApp(tk.Tk):
                 command = "p"
                 if self.serial_connected and self.serial_port:
                     self.serial_port.write(command.encode("utf-8"))
-        
+
+        self.after(FPS_MS, self.game_loop)
         self.render_screen()
 
 
@@ -448,13 +450,13 @@ class FlappyBirdApp(tk.Tk):
         "Met à jour le mode replay"
         # Vérifier si le replay est terminé
         if self.replay.is_replay_finished():
-            self.change_state("MENU")
+            self.change_state("GAME_OVER")
             return False
         
         # Récupérer la prochaine frame
         frame = self.replay.get_next_frame()
         if frame is None:
-            self.change_state("MENU")
+            self.change_state("GAME_OVER")
             return False
         
         # Appliquer l'état de la frame
@@ -599,8 +601,9 @@ class FlappyBirdApp(tk.Tk):
             self.renderer.draw_play_background()
             self.renderer.draw_bird()
             self.renderer.update_replay_hud()
+            self.after(FPS_MS, self.game_loop)
         
-        elif self.state.state_name == "PLAYING":            
+        elif self.state.state_name == "PLAYING":        
             if self.state.selected_mode == "Button":
                 # Mise à jour de la physique
                 if not self.update_button_mode(dt):
@@ -637,10 +640,8 @@ class FlappyBirdApp(tk.Tk):
                 
                 self.renderer.draw_play_background()
                 self.renderer.update_score_hud()
-                self.renderer.draw_bird()
-        
-        self.after(FPS_MS, self.game_loop)
-
+                self.renderer.draw_bird()  
+            self.after(FPS_MS, self.game_loop)
 
     def blink_loop(self):
         "Boucle de clignotement du texte du menu "

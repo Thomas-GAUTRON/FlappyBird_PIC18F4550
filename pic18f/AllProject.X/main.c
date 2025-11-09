@@ -18,7 +18,7 @@ void PLAY_NOTE(uint16_t period, uint16_t duration);
 void init_pins(void);
 void init_timer1(void);
 unsigned int mesurer_distance(void);
-int parseValue(char* buffer);
+int parseValue(char *buffer);
 typedef enum
 {
     MODE_NOTHING,
@@ -40,12 +40,13 @@ uint8_t bon_infra;
 int score = 1234, distance = 0;
 uint8_t bs_but, bs_infra, bs_de, bs_us;
 uint8_t event_dist = 0;
-uint8_t vy;
+uint8_t vy, bird_y;
 E_mode current_mode = MODE_NOTHING;
 volatile unsigned char timer_count = 0;
 
 int main()
 {
+
     PORTB = 0;
     PORTD = 0;
     TRISCbits.RC7 = 0;
@@ -96,12 +97,14 @@ int main()
     init_pins();
     while (1)
     {
-        if (ADCON0bits.GO == 0 && current_mode == FLAPPY_INFRA )
+        if (ADCON0bits.GO == 0 && current_mode == FLAPPY_INFRA)
         {
             ADCON0bits.GO = 1;
         }
+
         type++;
         USBDeviceTasks();
+
         if (type == 0)
         {
             INTCONbits.INT0F = 0;
@@ -154,46 +157,48 @@ int main()
                 if (usbReadBuffer[0] == 'a')
                 {
                     char buffer[30];
-                    
-                    sprintf(buffer, "best_score:%d-%d-%d-%d\n", 
+
+                    sprintf(buffer, "best_score:%d-%d-%d-%d\n",
                             bs_but, bs_infra, bs_de, bs_us);
                     current_mode = FLAPPY_ACCUEIL;
                     score = 0;
                     putrsUSBUSART(buffer);
                 }
-                else if(usbReadBuffer[0] == 'g')
+                else if (usbReadBuffer[0] == 'g')
                 {
-                    switch(current_mode){
-                        case FLAPPY_BTN:
-                            if(score > bs_but)
-                            {
-                                bs_but = score;
-                                EEPROM_Write(100, score);
-                            }
-                            break;
-                        case FLAPPY_INFRA:
-                            if(score > bs_infra)
-                            {
-                                bs_infra = score;
-                                EEPROM_Write(101, score);
-                            }
-                            break;
-                        case FLAPPY_POTENTIOMETRE:
-                            if(score > bs_de)
-                            {
-                                bs_de = score;
-                                EEPROM_Write(102, score);
-                            }
-                            break;
-                        case FLAPPY_ULTRA:
-                            if(score > bs_us)
-                            {
-                                bs_us = score;
-                                EEPROM_Write(103, score);
-                            }
-                            break;
-                        default:
-                            break;
+
+                    switch (current_mode)
+                    {
+                    case FLAPPY_BTN:
+                        if (score > bs_but)
+                        {
+                            bs_but = score;
+                            EEPROM_Write(100, score);
+                        }
+                        break;
+                    case FLAPPY_INFRA:
+                        if (score > bs_infra)
+                        {
+                            bs_infra = score;
+                            EEPROM_Write(101, score);
+                        }
+                        break;
+                    case FLAPPY_POTENTIOMETRE:
+                        if (score > bs_de)
+                        {
+                            bs_de = score;
+                            EEPROM_Write(102, score);
+                        }
+                        break;
+                    case FLAPPY_ULTRA:
+                        if (score > bs_us)
+                        {
+                            bs_us = score;
+                            EEPROM_Write(103, score);
+                        }
+                        break;
+                    default:
+                        break;
                     }
                     current_mode = FLAPPY_GAME_OVER;
                     putrsUSBUSART("GAME OVER\n");
@@ -230,8 +235,7 @@ int main()
                 }
                 else if (usbReadBuffer[0] == 'v')
                 {
-                    vy = parseValue(usbReadBuffer);
-                    
+                    vy = parseValue((char*)usbReadBuffer);
                 }
                 else
                 {
@@ -258,13 +262,13 @@ int main()
                 asm(
                     "BCF _flap_event, 2\n");
             }
-            
-            if(current_mode == FLAPPY_ULTRA) {
+
+            if (current_mode == FLAPPY_ULTRA)
+            {
                 distance = mesurer_distance();
                 char buffer[20];
                 sprintf(buffer, "u: %d cm\n", distance);
                 putrsUSBUSART(buffer);
-         
             }
 
             if (PORTCbits.RC0 == 1)
@@ -286,7 +290,7 @@ int main()
                 {
                     putrsUSBUSART("f\n");
                 }
-               event_C1 = 0;
+                event_C1 = 0;
             }
             else
             {
@@ -296,20 +300,19 @@ int main()
             if ((ADC_event & 0x2) && current_mode == FLAPPY_INFRA)
             {
                 if (ADC_value > 50)
+                {
+                    if (bon_infra == 1)
                     {
-                        if(bon_infra == 1)
-                        {
-                            putrsUSBUSART("i\n");
-                        }
-             
-                        bon_infra = 0;
+                        putrsUSBUSART("i\n");
                     }
-                    else
-                    {
-                        bon_infra = 1;
-                    }   
-                    ADC_event = 0;
-                
+
+                    bon_infra = 0;
+                }
+                else
+                {
+                    bon_infra = 1;
+                }
+                ADC_event = 0;
             }
             CDCTxService();
         }
@@ -363,13 +366,16 @@ void writeOnGlcd()
 {
     glcd_FillScreen(GLCD_BLUE);
     glcd_SetCursor(1, 0);
-    if(current_mode == FLAPPY_ACCUEIL || current_mode == MODE_NOTHING){
+    if (current_mode == FLAPPY_ACCUEIL || current_mode == MODE_NOTHING)
+    {
         glcd_WriteString("FLAPPY BIRD", 11, F8X8, GLCD_WHITE);
-    } 
-    else if (current_mode == FLAPPY_GAME_OVER){
+    }
+    else if (current_mode == FLAPPY_GAME_OVER)
+    {
         glcd_WriteString("GAME OVER", 9, F8X8, GLCD_WHITE);
     }
-    else{
+    else
+    {
         glcd_DrawLine(0, 32, 10, 32 + vy, GLCD_WHITE);
     }
 }
@@ -394,56 +400,63 @@ void PLAY_NOTE(uint16_t period, uint16_t duration)
     }
 }
 
-void init_pins(void) {
-    TRIG_TRIS = 0;  // TRIGGER en sortie
-    ECHO_TRIS = 1;  // ECHO en entr�e
+void init_pins(void)
+{
+    TRIG_TRIS = 0; // TRIGGER en sortie
+    ECHO_TRIS = 1; // ECHO en entr�e
     TRIGGER = 0;
 }
 
-void init_timer1(void) {
-    T1CON = 0x00;   // Timer1 d�sactiv�, prescaler 1:1
+void init_timer1(void)
+{
+    T1CON = 0x00; // Timer1 d�sactiv�, prescaler 1:1
     TMR1H = 0;
     TMR1L = 0;
 }
 
-unsigned int mesurer_distance(void) {
+unsigned int mesurer_distance(void)
+{
     unsigned int temps_us = 0;
-    
+
     // 1. Envoyer une impulsion de 10�s sur TRIGGER
     TRIGGER = 1;
     __delay_us(10);
     TRIGGER = 0;
-    
+
     // 2. Attendre que ECHO passe � HIGH (timeout 30ms)
     unsigned int timeout = 0;
-    while(ECHO == 0 && timeout < 300) {
+    while (ECHO == 0 && timeout < 300)
+    {
         __delay_us(1);
         timeout++;
     }
-    
-    if(timeout >= 300) return 100; // Timeout, pas d'�cho
-    
+
+    if (timeout >= 300)
+        return 100; // Timeout, pas d'�cho
+
     // 3. D�marrer le Timer1
     TMR1H = 0;
     TMR1L = 0;
     T1CONbits.TMR1ON = 1;
-    
+
     // 4. Attendre que ECHO passe � LOW (timeout 30ms)
     timeout = 0;
-    while(ECHO == 1 && timeout < 300) {
+    while (ECHO == 1 && timeout < 300)
+    {
         __delay_us(1);
         timeout++;
-        if(TMR1H > 0xFF) break; // Overflow protection
+        if (TMR1H > 0xFF)
+            break; // Overflow protection
     }
-    
+
     // 5. Arr�ter le Timer1
     T1CONbits.TMR1ON = 0;
-    
+
     // 6. Lire la valeur du timer
     temps_us = (TMR1H << 8) | TMR1L;
-    
+
     // 7. Calculer la distance
-    return  temps_us;
+    return temps_us;
 }
 
 int parseValue(char* buffer) {

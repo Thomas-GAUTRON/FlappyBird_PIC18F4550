@@ -33,7 +33,11 @@ class GameState:
         
         # Scores
         self.score = 0
-        self.best_score = self.load_best_score()
+        # best par mode (hors "Quit")
+        self.best_scores = {m: 0 for m in MODES if m != "Quit"}
+        # raccourci pour le HUD actuel
+        self.best_score = 0
+        self._sync_current_mode_best()
 
         # Replay
         self.replay_recording = []  # Liste des frames enregistrées
@@ -63,26 +67,26 @@ class GameState:
         self.pipe_gap = PIPE_GAP_BASE
         self.pipe_speed = PIPE_SPEED_BASE
         self.spawn_every_ms = PIPE_SPAWN_EVERY_MS
+
+    def _sync_current_mode_best(self):
+        "Met à jour self.best_score depuis le mode sélectionné."
+        if self.selected_mode in self.best_scores:
+            self.best_score = self.best_scores[self.selected_mode]
+        else:
+            self.best_score = 0
     
     def set_state(self, new_state: str):
-        "Change l'état du jeu"
         if new_state == self.state_name:
             return False
-        
-        # Mise à jour du meilleur score
-        if self.state_name == "PLAYING" and new_state == "GAME_OVER":
-            if self.score > self.best_score:
-                self.best_score = self.score
-                self.save_best_score()
-        
+        # (on ne sauve plus en fichier)
         self.state_name = new_state
         return True
     
     def set_mode(self, mode_name: str):
-        "Change le mode de jeu"
         if mode_name in MODES:
             self.selected_mode = mode_name
             self.selected_idx = MODES.index(mode_name)
+            self._sync_current_mode_best()   # << ajoute ça
             return True
         return False
     
@@ -97,22 +101,6 @@ class GameState:
         self.overlay_active = False
         self.overlay_type = None
         # previous_state reste intact pour le prochain affichage
-    
-    def load_best_score(self):
-        "Charge le meilleur score depuis le fichier"
-        try:
-            with open(BESTSCORE_FILE, "r", encoding="utf-8") as f:
-                return int(f.read().strip())
-        except Exception:
-            return 0
-    
-    def save_best_score(self):
-        "Sauvegarde le meilleur score dans le fichier"
-        try:
-            with open(BESTSCORE_FILE, "w", encoding="utf-8") as f:
-                f.write(str(self.best_score))
-        except Exception:
-            pass
     
     def increment_score(self):
         "Incrémente le score"

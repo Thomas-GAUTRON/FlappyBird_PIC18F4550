@@ -67,25 +67,17 @@ class FlappyBirdApp(tk.Tk):
     
     # ================== Série ==================
     def _init_serial(self):
-       # Liste tous les ports série disponibles
-        ports = serial.tools.list_ports.comports()
-
-        for port in ports:
-            try:
-                # Essaye de se connecter au port
-                self.serial_port = serial.Serial(port.device, baudrate=38400, timeout=0.1)
-                self.serial_connected = True
-                print(f"Connexion réussie sur {port.device}")
-                # Démarre la lecture en continu            
-                command = "a"            
-                self.serial_port.write(command.encode("utf-8")) # envoi initial pour test            
-                self.after(50, self._read_serial)   
-            except (serial.SerialException, OSError):
-                # Si la connexion échoue, passe au port suivant
-                continue
-        if not self.serial_connected:
-            # Aucun port trouvé
-            print("Aucun port série détecté ou disponible.")
+        try:
+            self.serial_port = serial.Serial('COM5', 38400, timeout=0.1)
+            self.serial_connected = True
+            print("Connexion série établie.")
+            # Démarre la lecture en continu
+            command = "a"
+            self.serial_port.write(command.encode("utf-8")) # envoi initial pour test
+            self.after(50, self._read_serial)   
+        except Exception as e:
+            print(f"Erreur de connexion série: {e}")
+            self.serial_connected = False
 
     def _read_serial(self):
         global saute

@@ -305,181 +305,97 @@ class Renderer:
     # ==================== Game Over ====================
     
     def render_game_over(self):
-        "Affiche l'écran de game over amélioré avec animations"
+        "Écran Game Over – grand panneau, mode courant, liste des best centrée"
         w = self.canvas.winfo_width() or WIDTH
         h = self.canvas.winfo_height() or HEIGHT
-        
+
         self.canvas.delete("all")
-        
-        # Fond semi-transparent (obscurci)
-        self.canvas.create_rectangle(
-            0, 0, w, h,
-            fill=GAMEOVER_BG_COLOR,
-            stipple="gray50",
-            tags=("gameover_bg",)
-        )
-        
-        # Panneau central (plus haut pour l'image)
-        panel_width = 600
-        panel_height = 500  # augmenté pour inclure l'image
-        panel_x1 = w // 2 - panel_width // 2
-        panel_y1 = h // 2 - panel_height // 2 - 30  # monté un peu
-        panel_x2 = w // 2 + panel_width // 2
-        panel_y2 = h // 2 + panel_height // 2 - 30
-        
-        # Ombre du panneau
-        shadow_offset = 8
-        self.canvas.create_rectangle(
-            panel_x1 + shadow_offset, panel_y1 + shadow_offset,
-            panel_x2 + shadow_offset, panel_y2 + shadow_offset,
-            fill="#000000",
-            outline="",
-            tags=("panel_shadow",)
-        )
-        
-        # Panneau principal
-        self.canvas.create_rectangle(
-            panel_x1, panel_y1, panel_x2, panel_y2,
-            fill="#1a1a1a",
-            outline=GAMEOVER_TITLE_COLOR,
-            width=3,
-            tags=("panel",)
-        )
-        
-        # Décoration coins (sur les coins du rectangle)
-        corner_size = 12
-        corners = [
-            (panel_x1, panel_y1),     # haut-gauche
-            (panel_x2, panel_y1),     # haut-droite
-            (panel_x1, panel_y2),     # bas-gauche
-            (panel_x2, panel_y2)      # bas-droite
-        ]
-        for cx, cy in corners:
-            self.canvas.create_rectangle(
-                cx - corner_size, cy - corner_size,
-                cx + corner_size, cy + corner_size,
-                fill=GAMEOVER_TITLE_COLOR,
-                outline="",
-                tags=("corner",)
-            )
-        
-        # Image du bird crashé
-        bird_y = panel_y1 + 100
+
+        # Fond assombri
+        self.canvas.create_rectangle(0, 0, w, h, fill=GAMEOVER_BG_COLOR, stipple="gray50", tags=("gameover_bg",))
+
+        # === Panneau central plus grand ===
+        panel_width  = 820
+        panel_height = 620
+        panel_x1 = w // 2 - panel_width  // 2
+        panel_y1 = h // 2 - panel_height // 2 - 20
+        panel_x2 = w // 2 + panel_width  // 2
+        panel_y2 = h // 2 + panel_height // 2 - 20
+
+        # Ombre
+        self.canvas.create_rectangle(panel_x1+10, panel_y1+10, panel_x2+10, panel_y2+10,
+        fill="#000000", outline="", tags=("panel_shadow",))
+        # Panneau
+        self.canvas.create_rectangle(panel_x1, panel_y1, panel_x2, panel_y2,
+        fill="#1a1a1a", outline=GAMEOVER_TITLE_COLOR, width=3, tags=("panel",))
+
+        # Coins déco
+        for (cx, cy) in [(panel_x1, panel_y1), (panel_x2, panel_y1), (panel_x1, panel_y2), (panel_x2, panel_y2)]:
+            self.canvas.create_rectangle(cx-12, cy-12, cx+12, cy+12, fill=GAMEOVER_TITLE_COLOR, outline="", tags=("corner",))
+
+        # Oiseau crash
         dead_img = getattr(self.assets, "bird_crash_tk", None) or getattr(self.assets, "bird_tk", None)
+        bird_y = panel_y1 + 90
         if dead_img:
-            self.canvas.create_image(
-                w // 2, bird_y,
-                image=dead_img,
-                anchor="center",
-                tags=("dead_bird",)
-            )
-        
-        # Titre "GAME OVER" avec effet
-        title_y = bird_y + 90
-        
-        # Ombre du titre
-        self.canvas.create_text(
-            w // 2 + 3, title_y + 3,
-            text="GAME OVER",
-            font=GAMEOVER_TITLE_FONT,
-            fill="#000000",
-            tags=("title_shadow",)
-        )
-        
+            self.canvas.create_image(w // 2, bird_y, image=dead_img, anchor="center", tags=("dead_bird",))
+
         # Titre
-        self.canvas.create_text(
-            w // 2, title_y,
-            text="GAME OVER",
-            font=GAMEOVER_TITLE_FONT,
-            fill=GAMEOVER_TITLE_COLOR,
-            tags=("title",)
-        )
-        
-        # Ligne de séparation
-        line_y = title_y + 60
-        self.canvas.create_line(
-            w // 2 - 200, line_y,
-            w // 2 + 200, line_y,
-            fill=GAMEOVER_HIGHLIGHT_COLOR,
-            width=2,
-            tags=("separator",)
-        )
-        
-        # Scores avec mise en forme
-        score_y = line_y + 50
-        
-        # Score actuel
-        self.canvas.create_text(
-            w // 2, score_y,
-            text="SCORE",
-            font=GAMEOVER_SUBTITLE_FONT,
-            fill=GAMEOVER_TEXT_COLOR,
-            tags=("score_label",)
-        )
-        
-        self.canvas.create_text(
-            w // 2, score_y + 45,
-            text=str(self.state.score),
-            font=GAMEOVER_SCORE_FONT,
-            fill=GAMEOVER_HIGHLIGHT_COLOR,
-            tags=("score_value",)
-        )
-        
-        # Meilleur score
-        best_y = score_y + 110
-        
-        # Afficher "NEW BEST!" si c'est un record
-        is_new_best = self.state.score >= self.state.best_score and self.state.score > 0
-        
+        title_y = bird_y + 90
+        self.canvas.create_text(w // 2 + 3, title_y + 3, text="GAME OVER", font=GAMEOVER_TITLE_FONT,
+                                fill="#000000", tags=("title_shadow",))
+        self.canvas.create_text(w // 2, title_y, text="GAME OVER", font=GAMEOVER_TITLE_FONT,
+                                fill=GAMEOVER_TITLE_COLOR, tags=("title",))
+
+        # Séparateur
+        line_y = title_y + 55
+        self.canvas.create_line(w // 2 - 300, line_y, w // 2 + 300, line_y,
+                                fill=GAMEOVER_HIGHLIGHT_COLOR, width=2, tags=("separator",))
+
+        # === MODE COURANT puis SCORE ===
+        info_y = line_y + 38
+        self.canvas.create_text(w // 2, info_y, text=f"MODE : {self.state.selected_mode}",
+                                font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("mode_label",))
+
+        score_y = info_y + 48
+        self.canvas.create_text(w // 2, score_y, text="SCORE", font=GAMEOVER_SUBTITLE_FONT,
+                                fill=GAMEOVER_TEXT_COLOR, tags=("score_label",))
+        self.canvas.create_text(w // 2, score_y + 46, text=str(self.state.score),
+                                font=GAMEOVER_SCORE_FONT, fill=GAMEOVER_HIGHLIGHT_COLOR, tags=("score_value",))
+
+        # NEW BEST ?
+        best_block_y = score_y + 120
+        is_new_best = self.state.score >= getattr(self.state, "best_score", 0) and self.state.score > 0
         if is_new_best:
-            
-            self.canvas.create_text(
-                w // 2, best_y - 30,
-                text="★ NEW BEST! ★",
-                font=(GAMEOVER_SUBTITLE_FONT[0], GAMEOVER_SUBTITLE_FONT[1], "bold"),
-                fill=GAMEOVER_HIGHLIGHT_COLOR,
-                tags=("new_best",)
-            )
-            
-            # Étoiles décoratives qui clignotent
-            if int(self.state.menu_animation_offset / 10) % 2 == 0:
-                for star_x in [w // 2 - 150, w // 2 + 150]:
-                    self.canvas.create_text(
-                        star_x, best_y - 30,
-                        text="★",
-                        font=("VT323", 40),
-                        fill=GAMEOVER_HIGHLIGHT_COLOR,
-                        tags=("star",)
-                    )
-        
-        self.canvas.create_text(
-            w // 2, best_y,
-            text="BEST",
-            font=GAMEOVER_SUBTITLE_FONT,
-            fill=GAMEOVER_TEXT_COLOR,
-            tags=("best_label",)
-        )
-        
-        self.canvas.create_text(
-            w // 2, best_y + 45,
-            text=str(self.state.best_score),
-            font=GAMEOVER_SCORE_FONT,
-            fill="#AAAAAA",
-            tags=("best_value",)
-        )
-        
-        # Instructions avec clignotement (PLUS BAS)
-        instructions_y = panel_y2 + 60  # En dessous du panneau
-        
+            self.canvas.create_text(w // 2, best_block_y - 34, text="★ NEW BEST! ★",
+                                    font=(GAMEOVER_SUBTITLE_FONT[0], GAMEOVER_SUBTITLE_FONT[1], "bold"),
+                                    fill=GAMEOVER_HIGHLIGHT_COLOR, tags=("new_best",))
+
+        # === Best multiper-mode centré ===
+        self.canvas.create_text(w // 2, best_block_y, text="- BEST SCORE -",
+                                font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("best_header",))
+
+        list_start_y = best_block_y + 42
+        line_gap = 36
+        x_gap = 30  # espace autour de l’axe central
+
+        modes_no_quit = [m for m in MODES if m != "Quit"]
+        for i, m in enumerate(modes_no_quit):
+            y = list_start_y + i * line_gap
+            val = (getattr(self.state, "best_scores", {}) or {}).get(m, 0)
+
+            # Libellé gauche (ancré à droite du centre)
+            self.canvas.create_text(w // 2 - x_gap, y, text=m + " :", font=("VT323", 28),
+                                    fill=GAMEOVER_TEXT_COLOR, anchor="e", tags=("best_list",))
+            # Valeur à droite (ancrée à gauche du centre)
+            self.canvas.create_text(w // 2 + x_gap, y, text=str(val), font=("VT323", 28, "bold"),
+                                    fill=GAMEOVER_HIGHLIGHT_COLOR if m == self.state.selected_mode else "#AAAAAA",
+                                    anchor="w", tags=("best_list",))
+
+        # Instruction (sous le panneau)
         if self.state.blink_on:
-            self.canvas.create_text(
-                w // 2, instructions_y,
-                text="Press A to return to menu",
-                font=GAMEOVER_SUBTITLE_FONT,
-                fill=GAMEOVER_TEXT_COLOR,
-                tags=("instructions",)
-            )
-    
+            self.canvas.create_text(w // 2, panel_y2 + 60, text="Press A to return to menu",
+                                    font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("instructions",))
+
     # ==================== Info Overlay ====================
     
     def render_info_overlay(self):

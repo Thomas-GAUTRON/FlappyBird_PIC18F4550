@@ -5,7 +5,7 @@ Gestion de l'état du jeu et des scores
 
 import time
 from constants import (
-    MODES, DEFAULT_MODE, BESTSCORE_FILE,
+    MODES, DEFAULT_MODE,
     PIPE_GAP_BASE, PIPE_SPEED_BASE, PIPE_SPAWN_EVERY_MS
 )
 
@@ -15,7 +15,7 @@ class GameState:
     
     def __init__(self):
         # État général
-        self.state_name = "MENU"  # MENU | PLAYING | GAME_OVER
+        self.state_name = "MENU"  # MENU | PLAYING | GAME_OVER | REPLAY
         self.menu_animation_offset = 0  #animations du menu
         self.selected_idx = MODES.index(DEFAULT_MODE)
         self.selected_mode = DEFAULT_MODE

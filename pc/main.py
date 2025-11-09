@@ -69,7 +69,7 @@ class FlappyBirdApp(tk.Tk):
     # ================== Série ==================
     def _init_serial(self):
         try:
-            self.serial_port = serial.Serial('COM5' , 38400, timeout=0.1)
+            self.serial_port = serial.Serial('COM8' , 38400, timeout=0.1)
             self.serial_connected = True
             print("Connexion série établie.")
             # Démarre la lecture en continu
@@ -187,8 +187,6 @@ class FlappyBirdApp(tk.Tk):
 
         self.bind_all("<Escape>", lambda e: self.destroy())        
         
-        self.bind_all("<MouseWheel>", self.on_mouse_wheel)
-
         # Info overlay
         self.bind_all("<i>", lambda e: self.toggle_info())
         self.bind_all("<I>", lambda e: self.toggle_info())
@@ -257,31 +255,6 @@ class FlappyBirdApp(tk.Tk):
     def flap(self):
         "Fait sauter l'oiseau"
         self.state.vy = self.physics.apply_flap()
-    
-    def on_mouse_wheel(self, e):
-        # Active uniquement en jeu + mode Ultrasound + pas d'overlay
-        if self.state.state_name != "PLAYING" or self.state.selected_mode != "Ultrasound":
-            return
-        if self.state.overlay_active:
-            return
-
-        direction = -1 if e.delta > 0 else 1  # -1 = vers le haut (y diminue), +1 = vers le bas
-        self._apply_wheel(direction)
-
-    def _apply_wheel(self, direction):
-        # Pas de déplacement par "cran" de molette
-        STEP = 30
-        self.state.bird_y += direction * STEP
-
-        # Clamp pour ne pas sortir de l'écran
-        h = self.canvas.winfo_height() or HEIGHT
-        from constants import BIRD_RADIUS
-        top = BIRD_RADIUS
-        bot = h - BIRD_RADIUS
-        if self.state.bird_y < top:
-            self.state.bird_y = top
-        elif self.state.bird_y > bot:
-            self.state.bird_y = bot
 
     def handle_replay(self):
         "Gère le démarrage du replay"
@@ -427,7 +400,7 @@ class FlappyBirdApp(tk.Tk):
 
 
 
-        # NOUVEAU - Enregistrer la frame AVEC les coordonnées des tuyaux
+        # Enregistrer la frame avec les coordonnées des tuyaux
         if self.replay.is_recording:
             self.replay.record_frame(
                 self.state.bird_y,
@@ -542,7 +515,7 @@ class FlappyBirdApp(tk.Tk):
             self.renderer.draw_footer(w, h)
         
         elif self.state.state_name == "PLAYING":
-            # Ne PAS effacer "all" pendant le jeu, juste le HUD
+            # Ne pas effacer "all" pendant le jeu, juste le HUD
             self.canvas.delete("hud")
             self.renderer.draw_play_background()
             self.renderer.draw_bird()
@@ -589,9 +562,9 @@ class FlappyBirdApp(tk.Tk):
             if self.state.menu_animation_offset % 3 == 0:
                 self.render_screen()
         
-        # NOUVEAU - Gestion du mode REPLAY
+        # Gestion du mode REPLAY
         elif self.state.state_name == "REPLAY":
-            # Avancer 2x plus vite (effet x2)
+            # Avancer 2x plus vite
             for _ in range(2):
                 if not self.update_replay_mode(dt):
                     self.after(FPS_MS, self.game_loop)
@@ -647,7 +620,7 @@ class FlappyBirdApp(tk.Tk):
         "Boucle de clignotement du texte du menu "
         blink_targets = []
 
-        # Clignotement du "Press X to start" dans le MENU
+        # Clignotement du "Press to start" dans le MENU
         if self.state.state_name == "MENU":
             blink_targets.append("press_start")
         

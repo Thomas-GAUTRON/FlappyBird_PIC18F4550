@@ -7,7 +7,7 @@ import random
 from my_timer import Timer
 from PIL import ImageTk
 from constants import (
-    WIDTH, HEIGHT, PIPE_WIDTH, PIPE_GAP_BASE, PIPE_GAP_MIN,
+    WIDTH, HEIGHT, PIPE_WIDTH, PIPE_GAP_MIN,
     PIPE_GAP_JITTER, PIPE_CENTER_MIN_FRAC, PIPE_CENTER_MAX_FRAC,
     PIPE_CENTER_DELTA_MINF, PIPE_SPEED_MAX, BIRD_X
 )
@@ -119,7 +119,7 @@ class PipesManager:
             
             # Coordonnées du tuyau
             coords = self.canvas.coords(top)
-            if not coords or len(coords) < 4:  # PROTECTION CONTRE LES ERREURS
+            if not coords or len(coords) < 4: 
                 remove_indices.append(i)
                 continue
                 

@@ -316,7 +316,7 @@ class Renderer:
         self.canvas.create_text(w // 2, score_y + 46, text=str(self.state.score),
         font=GAMEOVER_SCORE_FONT, fill=GAMEOVER_HIGHLIGHT_COLOR, tags=("score_value",))
 
-        # NEW BEST ?
+        # NEW BEST 
         best_block_y = score_y + 120
         is_new_best = self.state.score >= self.state.best_scores[self.state.selected_mode] and self.state.score > 0
         if is_new_best:

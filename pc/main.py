@@ -101,10 +101,18 @@ class FlappyBirdApp(tk.Tk):
                                 next_mode_index = (MODES.index(self.state.selected_mode) + 1) % len(MODES)
                                 self.set_mode(MODES[next_mode_index])
                             elif line and "best_score" in line.lower():
-                                score = line.split(':')[1]
-                                for i, part in enumerate(score.split('-')):
-                                    best_score_part = int(part)
-                                    # TODO: stocker best_score_part pour chaque mode
+                                payload = line.split(':', 1)[1].strip()
+                                parts = [p.strip() for p in payload.split('-') if p.strip() != ""]
+                                modes_no_quit = [m for m in MODES if m != "Quit"]
+                                for i, m in enumerate(modes_no_quit):
+                                    try:
+                                        self.state.best_scores[m] = int(parts[i])
+                                    except Exception:
+                                        pass
+                                self.state._sync_current_mode_best()
+                                self.render_screen()
+
+
                                     
 
                         elif self.state.state_name == "PLAYING":
@@ -351,6 +359,17 @@ class FlappyBirdApp(tk.Tk):
             command = "g"
             if self.serial_connected and self.serial_port:
                 self.serial_port.write(command.encode("utf-8"))
+                # Filet de sécurité : re-pousser le best final du mode courant
+            try:
+                mode = self.state.selected_mode
+                val = self.state.best_scores.get(mode, self.state.best_score)
+                msg = f"best_write:{mode}:{val}\n"
+                if self.serial_connected and self.serial_port:
+                    self.serial_port.write(msg.encode("utf-8"))
+                    print(f"Envoyé série: {msg.strip()}")
+            except Exception as e:
+                print(f"[BEST][GAME_OVER] err: {e}")
+
         
         # Initialisation en entrant dans PLAYING
         if new_state == "PLAYING":
@@ -425,6 +444,22 @@ class FlappyBirdApp(tk.Tk):
             if self.serial_connected and self.serial_port:
                 self.serial_port.write(command.encode("utf-8"))
 
+            if getattr(self.state, "just_new_best", False):
+                try:
+                    mode = self.state.selected_mode
+                    val = self.state.best_scores.get(mode, self.state.best_score)
+                    # IMPORTANT : adapte au parser MCU. Commence sans \n (comme "a"/"g"/"s").
+                    msg = f"best_write:{mode}:{val}"
+                    if self.serial_connected and self.serial_port:
+                        self.serial_port.write(msg.encode("utf-8"))
+                        # Si ton MCU a besoin d'un \n pour déclencher le parseur, dé-commente:
+                        # self.serial_port.write(b"\n")
+                        print(f"Envoyé série: {msg}")
+                finally:
+                    self.state.just_new_best = False
+
+
+
         # NOUVEAU - Enregistrer la frame AVEC les coordonnées des tuyaux
         if self.replay.is_recording:
             self.replay.record_frame(
@@ -444,45 +479,6 @@ class FlappyBirdApp(tk.Tk):
         
         return True
     
-
-    def update_ultrasound_mode(self, dt):
-        # PAS de self.state.vy, PAS de apply_gravity, PAS de déplacement vertical auto
-        self.state.vy = self.physics.apply_gravity(self.state.vy)
-        self.state.bird_y += self.state.vy
-
-        # Collision avec plafond/sol (clamp + game over si tu veux conserver la règle)
-        h = self.canvas.winfo_height() or HEIGHT
-        if self.physics.check_bounds_collision(self.state.bird_y, h):
-            self.change_state("GAME_OVER")
-            return False
-
-        # Spawn / déplacement tuyaux (identique aux autres modes)
-        if self.pipes_manager.should_spawn_new_pipe():
-            self.pipes_manager.spawn_pipe_pair()
-            self.pipes_manager.mark_pipe_spawn()
-
-        score_add = self.pipes_manager.move_pipes()
-        if score_add:
-            command = "s"
-            if self.serial_connected and self.serial_port:
-                self.serial_port.write(command.encode("utf-8"))
-
-        if self.replay.is_recording:
-            self.replay.record_frame(
-                self.state.bird_y,
-                self.state.vy,
-                self.state.pipes,
-                self.state.score,
-                self.canvas
-            )
-
-        # Collisions avec les tuyaux (identique)
-        if self.physics.check_pipe_collision(self.state.bird_y, self.state.pipes, self.canvas):
-            self.change_state("GAME_OVER")
-            return False
-
-        return True
-
     def update_replay_mode(self, dt):
         "Met à jour le mode replay"
         # Vérifier si le replay est terminé
@@ -671,7 +667,7 @@ class FlappyBirdApp(tk.Tk):
                 self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Ultrasound": 
-                if not self.update_ultrasound_mode(dt):
+                if not self.update_button_mode(dt):
                     self.after(FPS_MS, self.game_loop)
                     return
                 

@@ -38,6 +38,8 @@ class GameState:
         # raccourci pour le HUD actuel
         self.best_score = 0
         self._sync_current_mode_best()
+        self.just_new_best = False
+
 
         # Replay
         self.replay_recording = []  # Liste des frames enregistrées
@@ -78,7 +80,6 @@ class GameState:
     def set_state(self, new_state: str):
         if new_state == self.state_name:
             return False
-        # (on ne sauve plus en fichier)
         self.state_name = new_state
         return True
     
@@ -86,7 +87,7 @@ class GameState:
         if mode_name in MODES:
             self.selected_mode = mode_name
             self.selected_idx = MODES.index(mode_name)
-            self._sync_current_mode_best()   # << ajoute ça
+            self._sync_current_mode_best()  
             return True
         return False
     
@@ -103,5 +104,12 @@ class GameState:
         # previous_state reste intact pour le prochain affichage
     
     def increment_score(self):
-        "Incrémente le score"
+        "Incrémente le score + met à jour le best en direct"
         self.score += 1
+        self.just_new_best = False
+        cur = self.best_scores.get(self.selected_mode, 0)
+        if self.score > cur:
+            self.best_scores[self.selected_mode] = self.score
+            self.best_score = self.score
+            self.just_new_best = True
+

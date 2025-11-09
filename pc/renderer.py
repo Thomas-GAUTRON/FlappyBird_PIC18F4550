@@ -206,32 +206,6 @@ class Renderer:
             )
         
         self.canvas.tag_raise("score_hud")
-    
-    def update_best_hud(self):
-        "Met à jour l'affichage du meilleur score"
-        w = self.canvas.winfo_width() or WIDTH
-        
-        items = self.canvas.find_withtag("best_hud")
-        if items:
-            self.canvas.itemconfigure(
-                items[0], 
-                text=f"Best : {self.state.best_score}", 
-                font=BEST_FONT, 
-                fill=BEST_COLOR
-            )
-            self.canvas.coords(items[0], w - 10, 18)
-        else:
-            self.canvas.create_text(
-                w - 10, 18,
-                text=f"Best : {self.state.best_score}",
-                anchor="ne",
-                font=BEST_FONT,
-                fill=BEST_COLOR,
-                tags=("best_hud",)
-            )
-        
-        self.canvas.tag_raise("best_hud")
-        self.canvas.tag_raise("score_hud")
 
 
 
@@ -342,37 +316,37 @@ class Renderer:
         # Titre
         title_y = bird_y + 90
         self.canvas.create_text(w // 2 + 3, title_y + 3, text="GAME OVER", font=GAMEOVER_TITLE_FONT,
-                                fill="#000000", tags=("title_shadow",))
+        fill="#000000", tags=("title_shadow",))
         self.canvas.create_text(w // 2, title_y, text="GAME OVER", font=GAMEOVER_TITLE_FONT,
-                                fill=GAMEOVER_TITLE_COLOR, tags=("title",))
+        fill=GAMEOVER_TITLE_COLOR, tags=("title",))
 
         # Séparateur
         line_y = title_y + 55
         self.canvas.create_line(w // 2 - 300, line_y, w // 2 + 300, line_y,
-                                fill=GAMEOVER_HIGHLIGHT_COLOR, width=2, tags=("separator",))
+        fill=GAMEOVER_HIGHLIGHT_COLOR, width=2, tags=("separator",))
 
         # === MODE COURANT puis SCORE ===
         info_y = line_y + 38
         self.canvas.create_text(w // 2, info_y, text=f"MODE : {self.state.selected_mode}",
-                                font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("mode_label",))
+        font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("mode_label",))
 
         score_y = info_y + 48
         self.canvas.create_text(w // 2, score_y, text="SCORE", font=GAMEOVER_SUBTITLE_FONT,
-                                fill=GAMEOVER_TEXT_COLOR, tags=("score_label",))
+        fill=GAMEOVER_TEXT_COLOR, tags=("score_label",))
         self.canvas.create_text(w // 2, score_y + 46, text=str(self.state.score),
-                                font=GAMEOVER_SCORE_FONT, fill=GAMEOVER_HIGHLIGHT_COLOR, tags=("score_value",))
+        font=GAMEOVER_SCORE_FONT, fill=GAMEOVER_HIGHLIGHT_COLOR, tags=("score_value",))
 
         # NEW BEST ?
         best_block_y = score_y + 120
         is_new_best = self.state.score >= getattr(self.state, "best_score", 0) and self.state.score > 0
         if is_new_best:
             self.canvas.create_text(w // 2, best_block_y - 34, text="★ NEW BEST! ★",
-                                    font=(GAMEOVER_SUBTITLE_FONT[0], GAMEOVER_SUBTITLE_FONT[1], "bold"),
-                                    fill=GAMEOVER_HIGHLIGHT_COLOR, tags=("new_best",))
+            font=(GAMEOVER_SUBTITLE_FONT[0], GAMEOVER_SUBTITLE_FONT[1], "bold"),
+            fill=GAMEOVER_HIGHLIGHT_COLOR, tags=("new_best",))
 
         # === Best multiper-mode centré ===
         self.canvas.create_text(w // 2, best_block_y, text="- BEST SCORE -",
-                                font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("best_header",))
+        font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("best_header",))
 
         list_start_y = best_block_y + 42
         line_gap = 36
@@ -385,16 +359,16 @@ class Renderer:
 
             # Libellé gauche (ancré à droite du centre)
             self.canvas.create_text(w // 2 - x_gap, y, text=m + " :", font=("VT323", 28),
-                                    fill=GAMEOVER_TEXT_COLOR, anchor="e", tags=("best_list",))
+            fill=GAMEOVER_TEXT_COLOR, anchor="e", tags=("best_list",))
             # Valeur à droite (ancrée à gauche du centre)
             self.canvas.create_text(w // 2 + x_gap, y, text=str(val), font=("VT323", 28, "bold"),
-                                    fill=GAMEOVER_HIGHLIGHT_COLOR if m == self.state.selected_mode else "#AAAAAA",
-                                    anchor="w", tags=("best_list",))
+            fill=GAMEOVER_HIGHLIGHT_COLOR if m == self.state.selected_mode else "#AAAAAA",
+            anchor="w", tags=("best_list",))
 
         # Instruction (sous le panneau)
         if self.state.blink_on:
             self.canvas.create_text(w // 2, panel_y2 + 60, text="Press A to return to menu",
-                                    font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("instructions",))
+            font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("instructions",))
 
     # ==================== Info Overlay ====================
     
@@ -516,44 +490,6 @@ class Renderer:
         
         # S'assurer que l'overlay est au-dessus de tout
         self.canvas.tag_raise("info_overlay")
-    
-    # ==================== Placeholder ====================
-    
-    def render_placeholder_mode(self):
-        "Affiche un message pour les modes non développés"
-        self.canvas.delete("all")
-        
-        w = self.canvas.winfo_width() or WIDTH
-        h = self.canvas.winfo_height() or HEIGHT
-        
-        bg_img = self.assets.get_background_image("play", w, h)
-        if bg_img:
-            self.canvas.delete("play_bg")
-            self.canvas.create_image(
-                0, 0, image=bg_img, anchor="nw", tags=("play_bg",)
-            )
-            self.canvas.tag_lower("play_bg")
-        
-        # Texte principal
-        self.canvas.create_text(
-            w // 2, 200,
-            text="EN COURS DE REALISATION",
-            font=MENU_FONT,
-            fill=MENU_COLOR,
-            tags=("ph_title",)
-        )
-        # Texte qui clignotte -> on lui donne un tag
-        self.canvas.create_text(
-            w // 2, 300,
-            text="Press ENTER → MENU",
-            font=MENU_FONT,
-            fill=MENU_COLOR,
-            tags=("ph_enter",)
-        )
-
-        # Appliquer l'état de blink courant pour l'initialisation
-        self.set_tag_visible("ph_enter", self.state.blink_on)
-
     
     # ==================== Utilitaires ====================
     

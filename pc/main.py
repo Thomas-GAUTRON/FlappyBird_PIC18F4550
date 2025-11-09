@@ -68,7 +68,7 @@ class FlappyBirdApp(tk.Tk):
     # ================== Série ==================
     def _init_serial(self):
         try:
-            self.serial_port = serial.Serial('COM8', 38400, timeout=0.1)
+            self.serial_port = serial.Serial('COM5' , 38400, timeout=0.1)
             self.serial_connected = True
             print("Connexion série établie.")
             # Démarre la lecture en continu

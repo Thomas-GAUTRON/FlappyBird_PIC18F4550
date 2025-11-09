@@ -136,7 +136,7 @@ class Renderer:
                 tags=tag_text
             )
         
-        # Instructions "Press space to start"
+        # Instructions "Press 🟡 to start"
         hint_y = top_y + len(MODES) * gap_y - 50
         
         self.canvas.create_text(
@@ -252,26 +252,6 @@ class Renderer:
                 tags=("replay_score", "hud")
             )
         
-        # Instructions en bas
-        items_hint = self.canvas.find_withtag("replay_hint")
-        h = self.canvas.winfo_height() or HEIGHT
-        if items_hint:
-            self.canvas.itemconfigure(
-                items_hint[0],
-                text="Press ESC or A to stop replay",
-                font=("VT323", 25),
-                fill="#FFFFFF"
-            )
-            self.canvas.coords(items_hint[0], w // 2, h - 30)
-        else:
-            self.canvas.create_text(
-                w // 2, h - 30,
-                text="Press ESC or A to stop replay",
-                font=("VT323", 25),
-                fill="#FFFFFF",
-                tags=("replay_hint", "hud")
-            )
-        
         # Remonter tous les éléments HUD au-dessus
         self.canvas.tag_raise("hud")
 
@@ -367,7 +347,7 @@ class Renderer:
 
         # Instruction (sous le panneau)
         if self.state.blink_on:
-            self.canvas.create_text(w // 2, panel_y2 + 60, text="Press A to return to menu",
+            self.canvas.create_text(w // 2, panel_y2 + 60, text="Press 🟢 to return to menu",
             font=GAMEOVER_SUBTITLE_FONT, fill=GAMEOVER_TEXT_COLOR, tags=("instructions",))
 
     # ==================== Info Overlay ====================
@@ -482,7 +462,7 @@ class Renderer:
         if self.state.blink_on:
             self.canvas.create_text(
                 w // 2, close_y,
-                text="Press [I] to close",
+                text="Press 🔵 to close",
                 font=INFO_CLOSE_FONT,
                 fill=INFO_KEY_LPT_COLOR,
                 tags=("info_overlay", "info_close"),

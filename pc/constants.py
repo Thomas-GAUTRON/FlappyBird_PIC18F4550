@@ -94,69 +94,51 @@ INFO_CONTROLS = {
     "MENU": {
         "title": "CONTROLS - MENU",
         "controls": [
-            ("1", "Digit_Encoder", "Button Mode"),
-            ("2", "Digit_Encoder", "Infrared Mode"),
-            ("3", "Digit_Encoder", "Digit_Encoder Mode"),
-            ("4", "Digit_Encoder", "Ultrasound Mode"),
-            ("SPACE", "Button 1", "Start Game"),
-            ("R", "Button 5", "Watch Last Replay"),
-            ("I", "Button 2", "Toggle Info"),
-            ("ESC", "Button 3", "Quit Game"),
+            ("1/2/3/4", "🟢 - Green", "change mode"),
+            ("I", "🔵 - Blue ", "information"),
+            ("space", "🟡 - Yellow", "start"),
         ]
     },
     "PLAYING": {
         "Button": {
             "title": "CONTROLS - BUTTON MODE",
             "controls": [
-                ("SPACE", "Button 1", "Flap / Jump"),
-                ("A", "Button 4", "Return to Menu"),
-                ("I", "Button 2", "Show Info (Pause)"),
-                ("ESC", "Button 3", "Quit Game")
+                ("A", "🟢 - Green", "home"),
+                ("I", "🔵 - Blue ", "information"),
+                ("space", "🟠 - Orange", "jump"),
             ]
         },
         "Infrared": {
             "title": "CONTROLS - INFRARED MODE",
             "controls": [
-                ("SPACE", "Infrared Sensor", "Control Bird"),
-                ("A", "Button 4", "Return to Menu"),
-                ("I", "Button 2", "Show Info (Pause)"),
-                ("ESC", "Button 3", "Quit Game")
+                ("A", "🟢 - Green", "home"),
+                ("I", "🔵 - Blue ", "information"),
+                ("space", "IR - Orange", "jump"),
             ]
         },
         "Digit_Encoder": {
             "title": "CONTROLS - Digit_Encoder MODE",
             "controls": [
-                ("_", "Digital Encoder", "Control Height"),
-                ("A", "Button 4", "Return to Menu"),
-                ("I", "Button 2", "Show Info (Pause)"),
-                ("ESC", "Button 3", "Quit Game")
+                ("A", "🟢 - Green", "home"),
+                ("I", "🔵 - Blue ", "information"),
+                ("space", "DE - Orange", "jump"),
             ]
         },
         "Ultrasound": {
             "title": "CONTROLS - ULTRASOUND MODE",
             "controls": [
-                ("_", "Ultrasound Sensor", "Control Height"),
-                ("A", "Button 4", "Return to Menu"),
-                ("I", "Button 2", "Show Info (Pause)"),
-                ("ESC", "Button 3", "Quit Game")
+                ("A", "🟢 - Green", "home"),
+                ("I", "🔵 - Blue ", "information"),
+                ("space", "US - Orange", "jump"),
             ]
         }
     },
     "GAME_OVER": {
         "title": "GAME OVER - OPTIONS",
         "controls": [
-            ("SPACE", "Button 1", "Retry Same Mode"),
-            ("R", "Button 5", "Watch Replay"),
-            ("A", "Button 4", "Return to Menu"),
-            ("I", "Button 2", "Toggle Info"),
-            ("ESC", "Button 3", "Quit Game")
+            ("A", "🟢 - Green", "home"),
+            ("I", "🔵 - Blue ", "information"),
+            ("R", "🟡 - Yellow", "replay"),
         ]
     },
-    "REPLAY": {
-        "title": "REPLAY MODE",
-        "controls": [
-            ("ESC", "Button 3", "Stop Replay"),
-            ("A", "Button 4", "Return to Menu"),
-        ]
-    }
 }

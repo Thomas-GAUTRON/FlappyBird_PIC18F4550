@@ -17,7 +17,8 @@ from physics import PhysicsEngine
 from pipes_manager import PipesManager
 from renderer import Renderer
 import serial
-
+import serial.tools.list_ports
+saute = True
 
 class FlappyBirdApp(tk.Tk):
     "Application principale Flappy Bird"
@@ -57,19 +58,27 @@ class FlappyBirdApp(tk.Tk):
         self.after(FPS_MS, self.game_loop)
         self.after(BLINK_MS, self.blink_loop)
     
-     # ================== Série ==================
+    # ================== Série ==================
     def _init_serial(self):
-        try:
-            self.serial_port = serial.Serial('COM5', 38400, timeout=0.1)
-            self.serial_connected = True
-            print("Connexion série établie.")
-            # Démarre la lecture en continu
-            command = "a"
-            self.serial_port.write(command.encode("utf-8")) # envoi initial pour test
-            self.after(50, self._read_serial)   
-        except Exception as e:
-            print(f"Erreur de connexion série: {e}")
-            self.serial_connected = False
+       # Liste tous les ports série disponibles
+        ports = serial.tools.list_ports.comports()
+
+        for port in ports:
+            try:
+                # Essaye de se connecter au port
+                self.serial_port = serial.Serial(port.device, baudrate=38400, timeout=0.1)
+                self.serial_connected = True
+                print(f"Connexion réussie sur {port.device}")
+                # Démarre la lecture en continu            
+                command = "a"            
+                self.serial_port.write(command.encode("utf-8")) # envoi initial pour test            
+                self.after(50, self._read_serial)   
+            except (serial.SerialException, OSError):
+                # Si la connexion échoue, passe au port suivant
+                continue
+        if not self.serial_connected:
+            # Aucun port trouvé
+            print("Aucun port série détecté ou disponible.")
 
     def _read_serial(self):
         global saute
@@ -112,8 +121,9 @@ class FlappyBirdApp(tk.Tk):
                             elif self.state.selected_mode == "Ultrasound":
                                 if line and "u" in line.lower():
                                     num = line.split(':')[1]
-                                    num = int(num.split(' ')[1])
-                                    if(num< 70):
+                                    num = int(num.split(' ')[1]) // 119
+                                    print("num =", num)
+                                    if(num< 10):
                                         if saute:
                                             self.handle_space()
                                         saute =False
@@ -132,9 +142,7 @@ class FlappyBirdApp(tk.Tk):
                         
                         if  line == "b":
                             self.toggle_info()
-                        elif line == "q":
-                            # self.destroy()
-                            pass
+           
 
                         print(f"Reçu série: {line}")
 
@@ -199,7 +207,6 @@ class FlappyBirdApp(tk.Tk):
         self.bind_all("<space>", lambda e: self.handle_space())
     
     # ==================== Actions utilisateur ====================
-    
     def toggle_info(self):
         "Affiche/cache l'overlay d'information"
         if self.state.overlay_active:
@@ -208,9 +215,6 @@ class FlappyBirdApp(tk.Tk):
             self.state.last_tick = time.time()
             # Effacer les éléments déjà dessinés de l’overlay
             self.canvas.delete("info_overlay")
-
-            self.pipes_manager.mark_pipe_spawn()
-
         else:
             self.state.show_info()
         
@@ -265,7 +269,7 @@ class FlappyBirdApp(tk.Tk):
 
     def _apply_wheel(self, direction):
         # Pas de déplacement par "cran" de molette
-        STEP = 20
+        STEP = 30
         self.state.bird_y += direction * STEP
 
         # Clamp pour ne pas sortir de l'écran
@@ -280,7 +284,6 @@ class FlappyBirdApp(tk.Tk):
 
 
     # ==================== Gestion des états ====================
-    
     def change_state(self, new_state: str):
         "Change l'état du jeu"
         old_state = self.state.state_name
@@ -305,7 +308,9 @@ class FlappyBirdApp(tk.Tk):
         # Initialisation en entrant dans PLAYING
         if new_state == "PLAYING":
             self.reset_gameplay()
-            if self.state.selected_mode == "Button":
+            if self.state.selected_mode == "Quit":
+                self.destroy()
+            elif self.state.selected_mode == "Button":
                 command = "b"
                 if self.serial_connected and self.serial_port:
                     self.serial_port.write(command.encode("utf-8"))
@@ -348,7 +353,6 @@ class FlappyBirdApp(tk.Tk):
         self.pipes_manager.mark_pipe_spawn()
     
     # ==================== Update gameplay ====================
-    
     def update_button_mode(self, dt):
         "Met à jour la physique en mode Button"
         # Gravité
@@ -372,7 +376,6 @@ class FlappyBirdApp(tk.Tk):
             command = "s"
             if self.serial_connected and self.serial_port:
                 self.serial_port.write(command.encode("utf-8"))
-
         
         # Collision avec les tuyaux
         if self.physics.check_pipe_collision(
@@ -413,10 +416,8 @@ class FlappyBirdApp(tk.Tk):
             return False
 
         return True
-
         
     # ==================== Rendu ====================
-    
     def render_screen(self):
         "Affiche l'écran en fonction de l'état"
         self.canvas.delete("hud")
@@ -434,12 +435,10 @@ class FlappyBirdApp(tk.Tk):
             self.renderer.draw_footer(w, h)
         
         elif self.state.state_name == "PLAYING":
-            # Rendu
-            self.renderer.draw_play_background()
+           
             self.renderer.draw_bird()
             self.renderer.update_score_hud()
             self.renderer.update_best_hud()
-
         
         elif self.state.state_name == "GAME_OVER":
             self.renderer.render_game_over()
@@ -448,8 +447,7 @@ class FlappyBirdApp(tk.Tk):
         if self.state.overlay_active and self.state.overlay_type == "INFO":
             self.renderer.render_info_overlay()
     
-    # ==================== Boucles ====================
-    
+    # ==================== Boucles ==================== 
     def game_loop(self):
         "Boucle principale du jeu"
         now = time.time()
@@ -484,10 +482,8 @@ class FlappyBirdApp(tk.Tk):
                 
                 # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.draw_bird()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
-
+                self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Infrared":
                 # Mise à jour de la physique
@@ -498,10 +494,8 @@ class FlappyBirdApp(tk.Tk):
                 
                 # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.draw_bird()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
-
+                self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Potentiometer":
                 # Mise à jour de la physique
@@ -512,22 +506,16 @@ class FlappyBirdApp(tk.Tk):
                 
                 # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.draw_bird()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
-
+                self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Ultrasound": 
                 if not self.update_ultrasound_mode(dt):
                     self.after(FPS_MS, self.game_loop)
                     return
-                
-                # Rendu
                 self.renderer.draw_play_background()
-                self.renderer.draw_bird()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
-
+                self.renderer.draw_bird()
         
         self.after(FPS_MS, self.game_loop)
     

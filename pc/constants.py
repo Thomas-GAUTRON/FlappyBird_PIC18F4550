@@ -49,7 +49,7 @@ INFO_CLOSE_FONT = ("VT323", 25)
 MENU_ANIMATION_SPEED = 2  # vitesse d'animation du menu
 
 # -- Modes de jeu --
-MODES = ["Button", "Infrared", "Potentiometer", "Ultrasound"]
+MODES = ["Button", "Infrared", "Potentiometer", "Ultrasound", "Quit"]
 DEFAULT_MODE = "Button"
 
 # -- Oiseau --

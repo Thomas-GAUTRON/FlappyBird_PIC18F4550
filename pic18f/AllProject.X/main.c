@@ -37,9 +37,9 @@ uint8_t num7seg = 0;
 uint8_t type = 0;
 uint8_t ADC_value;
 uint8_t bon_infra;
-int score = 1234;
+int score = 1234, distance = 0;
 uint8_t bs_but, bs_infra, bs_de, bs_us;
-uint8_t distance = 0, event_dist = 0;
+uint8_t event_dist = 0;
 uint8_t vy;
 E_mode current_mode = MODE_NOTHING;
 volatile unsigned char timer_count = 0;
@@ -214,7 +214,7 @@ int main()
                 {
                     current_mode = FLAPPY_INFRA;
                     score = 0;
-                    putrsUSBUSART("Infraroug*e\n");
+                    putrsUSBUSART("Infrarouge\n");
                 }
                 else if (usbReadBuffer[0] == 'u')
                 {
@@ -417,7 +417,7 @@ unsigned int mesurer_distance(void) {
     // 2. Attendre que ECHO passe � HIGH (timeout 30ms)
     unsigned int timeout = 0;
     while(ECHO == 0 && timeout < 300) {
-        __delay_us(10);
+        __delay_us(1);
         timeout++;
     }
     
@@ -431,7 +431,7 @@ unsigned int mesurer_distance(void) {
     // 4. Attendre que ECHO passe � LOW (timeout 30ms)
     timeout = 0;
     while(ECHO == 1 && timeout < 300) {
-        __delay_us(10);
+        __delay_us(1);
         timeout++;
         if(TMR1H > 0xFF) break; // Overflow protection
     }
@@ -443,7 +443,7 @@ unsigned int mesurer_distance(void) {
     temps_us = (TMR1H << 8) | TMR1L;
     
     // 7. Calculer la distance
-    return  (temps_us * 17) / 200;
+    return  temps_us;
 }
 
 int parseValue(char* buffer) {

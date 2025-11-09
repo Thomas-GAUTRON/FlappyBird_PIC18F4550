@@ -110,11 +110,18 @@ class PipesManager:
             # Déplacer les images
             if i < len(self.state.pipe_imgs):
                 top_img_id, bot_img_id, _, _ = self.state.pipe_imgs[i]
-                self.canvas.move(top_img_id, dx, 0)
-                self.canvas.move(bot_img_id, dx, 0)
+                if top_img_id:
+                    self.canvas.move(top_img_id, dx, 0)
+                if bot_img_id:
+                    self.canvas.move(bot_img_id, dx, 0)
             
             # Coordonnées du tuyau
-            x1, y1, x2, y2 = self.canvas.coords(top)
+            coords = self.canvas.coords(top)
+            if not coords or len(coords) < 4:  # PROTECTION CONTRE LES ERREURS
+                remove_indices.append(i)
+                continue
+                
+            x1, y1, x2, y2 = coords
             
             # Suppression si hors écran
             if x2 < 0:
@@ -132,14 +139,17 @@ class PipesManager:
         
         # Suppression des tuyaux hors écran
         for idx in reversed(remove_indices):
-            t, b, _ = self.state.pipes.pop(idx)
-            self.canvas.delete(t)
-            self.canvas.delete(b)
-            
-            if idx < len(self.state.pipe_imgs):
-                top_img_id, bot_img_id, _, _ = self.state.pipe_imgs.pop(idx)
-                self.canvas.delete(top_img_id)
-                self.canvas.delete(bot_img_id)
+            if idx < len(self.state.pipes):
+                t, b, _ = self.state.pipes.pop(idx)
+                self.canvas.delete(t)
+                self.canvas.delete(b)
+                
+                if idx < len(self.state.pipe_imgs):
+                    top_img_id, bot_img_id, _, _ = self.state.pipe_imgs.pop(idx)
+                    if top_img_id:
+                        self.canvas.delete(top_img_id)
+                    if bot_img_id:
+                        self.canvas.delete(bot_img_id)
 
         return return_val
 

@@ -34,6 +34,17 @@ class GameState:
         # Scores
         self.score = 0
         self.best_score = self.load_best_score()
+
+        # Replay
+        self.replay_recording = []  # Liste des frames enregistrées
+        self.replay_mode = False
+        self.replay_index = 0
+        self.replay_speed = 2.0  # Vitesse x2
+
+        # Dans reset_gameplay_vars():
+        if not self.replay_mode:  # Ne pas effacer si on est en replay
+            self.replay_recording = []
+        self.replay_index = 0
     
     def reset_gameplay_vars(self):
         "Réinitialise les variables de gameplay"

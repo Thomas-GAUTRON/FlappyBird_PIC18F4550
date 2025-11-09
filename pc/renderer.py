@@ -232,6 +232,75 @@ class Renderer:
         
         self.canvas.tag_raise("best_hud")
         self.canvas.tag_raise("score_hud")
+
+
+
+    def update_replay_hud(self):
+        "Affiche le HUD pendant le replay"
+        w = self.canvas.winfo_width() or WIDTH
+        
+        # Indicateur REPLAY en haut à gauche
+        items_replay = self.canvas.find_withtag("replay_indicator")
+        if items_replay:
+            self.canvas.itemconfigure(
+                items_replay[0],
+                text="🎬 REPLAY x2",
+                font=("VT323", 40, "bold"),
+                fill="#FF4444"
+            )
+            self.canvas.coords(items_replay[0], 20, 30)
+        else:
+            self.canvas.create_text(
+                20, 30,
+                text="🎬 REPLAY",
+                font=("VT323", 40, "bold"),
+                fill="#FF4444",
+                anchor="nw",
+                tags=("replay_indicator", "hud")
+            )
+        
+        # Score du replay au centre
+        items_score = self.canvas.find_withtag("replay_score")
+        if items_score:
+            self.canvas.itemconfigure(
+                items_score[0],
+                text=f"Score : {self.state.score}",
+                font=SCORE_FONT,
+                fill=SCORE_COLOR
+            )
+            self.canvas.coords(items_score[0], w // 2, 50)
+        else:
+            self.canvas.create_text(
+                w // 2, 50,
+                text=f"Score : {self.state.score}",
+                font=SCORE_FONT,
+                fill=SCORE_COLOR,
+                tags=("replay_score", "hud")
+            )
+        
+        # Instructions en bas
+        items_hint = self.canvas.find_withtag("replay_hint")
+        h = self.canvas.winfo_height() or HEIGHT
+        if items_hint:
+            self.canvas.itemconfigure(
+                items_hint[0],
+                text="Press ESC or A to stop replay",
+                font=("VT323", 25),
+                fill="#FFFFFF"
+            )
+            self.canvas.coords(items_hint[0], w // 2, h - 30)
+        else:
+            self.canvas.create_text(
+                w // 2, h - 30,
+                text="Press ESC or A to stop replay",
+                font=("VT323", 25),
+                fill="#FFFFFF",
+                tags=("replay_hint", "hud")
+            )
+        
+        # Remonter tous les éléments HUD au-dessus
+        self.canvas.tag_raise("hud")
+
     
     # ==================== Game Over ====================
     

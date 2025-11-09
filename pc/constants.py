@@ -48,6 +48,10 @@ INFO_CLOSE_FONT = ("VT323", 25)
 # -- Animations --
 MENU_ANIMATION_SPEED = 2  # vitesse d'animation du menu
 
+# -- Replay --
+REPLAY_SPEED = 2.0  # Vitesse de lecture du replay (x2)
+MAX_REPLAY_FRAMES = 10000  # Nombre maximum de frames enregistrées
+
 # -- Modes de jeu --
 MODES = ["Button", "Infrared", "Potentiometer", "Ultrasound", "Quit"]
 DEFAULT_MODE = "Button"
@@ -69,8 +73,8 @@ PIPE_CENTER_MAX_FRAC = 0.70
 PIPE_CENTER_DELTA_MINF = 0.20
 
 PIPE_WIDTH = 135
-PIPE_GAP_BASE   = 350   # taille du trou au départ (pixels) — facile
-PIPE_GAP_MIN    = 200   # taille minimale atteinte avec la difficulté — dur
+PIPE_GAP_BASE   = 350   # taille du trou au départ (pixels) – facile
+PIPE_GAP_MIN    = 200   # taille minimale atteinte avec la difficulté – dur
 PIPE_GAP_JITTER = 40    # +/- aléatoire autour de la cible (évite la monotonie)
 
 PIPE_SPEED_BASE = 20.0
@@ -81,7 +85,7 @@ PIPE_SPAWN_EVERY_MS = 1200
 MODE_PIPE_SKINS = {
     "Button": ("pipes/p_u_gry.png", "pipes/p_b_gry.png"),
     "Infrared": ("pipes/p_u_serda.png", "pipes/p_b_serda.png"),
-    "Potentiometer": ("pipes/p_u_pouf.png", "pipes/p_b_pouf.png"),
+    "Digit_Encoder": ("pipes/p_u_pouf.png", "pipes/p_b_pouf.png"),
     "Ultrasound": ("pipes/p_u_serp.png", "pipes/p_b_serp.png"),
 }
 
@@ -90,11 +94,12 @@ INFO_CONTROLS = {
     "MENU": {
         "title": "CONTROLS - MENU",
         "controls": [
-            ("1", "Potentiometer", "Button Mode"),
-            ("2", "Potentiometer", "Infrared Mode"),
-            ("3", "Potentiometer", "Potentiometer Mode"),
-            ("4", "Potentiometer", "Ultrasound Mode"),
+            ("1", "Digit_Encoder", "Button Mode"),
+            ("2", "Digit_Encoder", "Infrared Mode"),
+            ("3", "Digit_Encoder", "Digit_Encoder Mode"),
+            ("4", "Digit_Encoder", "Ultrasound Mode"),
             ("SPACE", "Button 1", "Start Game"),
+            ("R", "Button 5", "Watch Last Replay"),
             ("I", "Button 2", "Toggle Info"),
             ("ESC", "Button 3", "Quit Game"),
         ]
@@ -118,8 +123,8 @@ INFO_CONTROLS = {
                 ("ESC", "Button 3", "Quit Game")
             ]
         },
-        "Potentiometer": {
-            "title": "CONTROLS - POTENTIOMETER MODE",
+        "Digit_Encoder": {
+            "title": "CONTROLS - Digit_Encoder MODE",
             "controls": [
                 ("_", "Digital Encoder", "Control Height"),
                 ("A", "Button 4", "Return to Menu"),
@@ -141,9 +146,17 @@ INFO_CONTROLS = {
         "title": "GAME OVER - OPTIONS",
         "controls": [
             ("SPACE", "Button 1", "Retry Same Mode"),
+            ("R", "Button 5", "Watch Replay"),
             ("A", "Button 4", "Return to Menu"),
             ("I", "Button 2", "Toggle Info"),
             ("ESC", "Button 3", "Quit Game")
+        ]
+    },
+    "REPLAY": {
+        "title": "REPLAY MODE",
+        "controls": [
+            ("ESC", "Button 3", "Stop Replay"),
+            ("A", "Button 4", "Return to Menu"),
         ]
     }
 }

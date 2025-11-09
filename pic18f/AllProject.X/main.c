@@ -154,6 +154,15 @@ int main()
                 if (usbReadBuffer[0] == 'a')
                 {
                     char buffer[30];
+                    
+                    sprintf(buffer, "best_score:%d-%d-%d-%d\n", 
+                            bs_but, bs_infra, bs_de, bs_us);
+                    current_mode = FLAPPY_ACCUEIL;
+                    score = 0;
+                    putrsUSBUSART(buffer);
+                }
+                else if(usbReadBuffer[0] == 'g')
+                {
                     switch(current_mode){
                         case FLAPPY_BTN:
                             if(score > bs_but)
@@ -186,15 +195,6 @@ int main()
                         default:
                             break;
                     }
-                    
-                    sprintf(buffer, "best_score:%d-%d-%d-%d\n", 
-                            bs_but, bs_infra, bs_de, bs_us);
-                    current_mode = FLAPPY_ACCUEIL;
-                    score = 0;
-                    putrsUSBUSART(buffer);
-                }
-                else if(usbReadBuffer[0] == 'g')
-                {
                     current_mode = FLAPPY_GAME_OVER;
                     putrsUSBUSART("GAME OVER\n");
                 }

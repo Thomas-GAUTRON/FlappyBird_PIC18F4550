@@ -667,7 +667,7 @@ class FlappyBirdApp(tk.Tk):
                 
                 self.renderer.draw_play_background()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
+                self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Digit_Encoder":
                 if not self.update_button_mode(dt):
@@ -676,7 +676,7 @@ class FlappyBirdApp(tk.Tk):
                 
                 self.renderer.draw_play_background()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
+                self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Ultrasound": 
                 if not self.update_ultrasound_mode(dt):
@@ -685,7 +685,7 @@ class FlappyBirdApp(tk.Tk):
                 
                 self.renderer.draw_play_background()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
+                self.renderer.draw_bird()
         
         self.after(FPS_MS, self.game_loop)
 

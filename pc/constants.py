@@ -53,7 +53,7 @@ REPLAY_SPEED = 2.0  # Vitesse de lecture du replay (x2)
 MAX_REPLAY_FRAMES = 10000  # Nombre maximum de frames enregistrées
 
 # -- Modes de jeu --
-MODES = ["Button", "Infrared", "Potentiometer", "Ultrasound", "Quit"]
+MODES = ["Button", "Infrared", "Digit_Encoder", "Ultrasound", "Quit"]
 DEFAULT_MODE = "Button"
 
 # -- Oiseau --

@@ -143,7 +143,7 @@ class FlappyBirdApp(tk.Tk):
 
             if self.state.state_name == "PLAYING":
                 # Write angle to serial based on bird_y
-                command = f"v:{self.state.vy}\n"
+                command = f"v:{self.state.vy}-{self.state.bird_y}\n"
                 if self.serial_connected and self.serial_port:
                     self.serial_port.write(command.encode("utf-8"))
                     print(f"Envoyé série: {command.strip()}")
@@ -423,20 +423,6 @@ class FlappyBirdApp(tk.Tk):
             if self.serial_connected and self.serial_port:
                 self.serial_port.write(command.encode("utf-8"))
 
-            if getattr(self.state, "just_new_best", False):
-                try:
-                    mode = self.state.selected_mode
-                    val = self.state.best_scores.get(mode, self.state.best_score)
-                    # IMPORTANT : adapte au parser MCU. Commence sans \n (comme "a"/"g"/"s").
-                    msg = f"best_write:{mode}:{val}"
-                    if self.serial_connected and self.serial_port:
-                        self.serial_port.write(msg.encode("utf-8"))
-                        # Si ton MCU a besoin d'un \n pour déclencher le parseur, dé-commente:
-                        # self.serial_port.write(b"\n")
-                        print(f"Envoyé série: {msg}")
-                finally:
-                    self.state.just_new_best = False
-
 
 
         # NOUVEAU - Enregistrer la frame AVEC les coordonnées des tuyaux
@@ -559,8 +545,7 @@ class FlappyBirdApp(tk.Tk):
             self.renderer.draw_play_background()
             self.renderer.draw_bird()
             self.renderer.update_score_hud()
-            self.renderer.update_best_hud()
-
+            
         elif self.state.state_name == "REPLAY":
             self.canvas.delete("hud")
             self.renderer.draw_play_background()

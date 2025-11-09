@@ -4,7 +4,7 @@ Gestion des tuyaux (spawn, déplacement, suppression)
 """
 
 import random
-import time
+from my_timer import Timer
 from PIL import ImageTk
 from constants import (
     WIDTH, HEIGHT, PIPE_WIDTH, PIPE_GAP_BASE, PIPE_GAP_MIN,
@@ -20,6 +20,8 @@ class PipesManager:
         self.canvas = canvas
         self.assets = assets_manager
         self.state = game_state
+        self.timer = Timer()
+        self.timer.start()
     
     def calculate_dynamic_gap(self) -> int:
         "Calcule le gap dynamique en fonction du score"
@@ -155,9 +157,9 @@ class PipesManager:
 
     def should_spawn_new_pipe(self) -> bool:
         "Vérifie s'il faut spawner un nouveau tuyau"
-        elapsed_ms = (time.time() - self.state.last_pipe_spawn) * 1000.0
+        elapsed_ms = (self.timer.time() - self.state.last_pipe_spawn) * 1000.0
         return elapsed_ms >= self.state.spawn_every_ms
     
     def mark_pipe_spawn(self):
         "Marque qu'un tuyau vient d'être spawné"
-        self.state.last_pipe_spawn = time.time()
+        self.state.last_pipe_spawn = self.timer.time()

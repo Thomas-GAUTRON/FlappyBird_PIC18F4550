@@ -222,11 +222,12 @@ class FlappyBirdApp(tk.Tk):
         if self.state.overlay_active:
             self.state.hide_info()
             # Reset du timer pour éviter un gros dt après la pause
-            self.state.last_tick = time.time()
+            self.pipes_manager.timer.start()
             # Effacer les éléments déjà dessinés de l’overlay
             self.canvas.delete("info_overlay")
         else:
             self.state.show_info()
+            self.pipes_manager.timer.pause()
         
         self.render_screen()
 
@@ -616,7 +617,7 @@ class FlappyBirdApp(tk.Tk):
         now = time.time()
         dt = now - self.state.last_tick
         self.state.last_tick = now
-        
+
         # Si overlay actif, on freeze la logique de jeu
         if self.state.overlay_active:
             self.after(FPS_MS, self.game_loop)
@@ -657,7 +658,7 @@ class FlappyBirdApp(tk.Tk):
                 # Rendu
                 self.renderer.draw_play_background()
                 self.renderer.update_score_hud()
-                self.renderer.update_best_hud()
+                self.renderer.draw_bird()
 
             elif self.state.selected_mode == "Infrared":
                 if not self.update_button_mode(dt):

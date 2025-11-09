@@ -68,7 +68,7 @@ class FlappyBirdApp(tk.Tk):
     # ================== Série ==================
     def _init_serial(self):
         try:
-            self.serial_port = serial.Serial('COM5', 38400, timeout=0.1)
+            self.serial_port = serial.Serial('COM8', 38400, timeout=0.1)
             self.serial_connected = True
             print("Connexion série établie.")
             # Démarre la lecture en continu
@@ -101,19 +101,10 @@ class FlappyBirdApp(tk.Tk):
                                 next_mode_index = (MODES.index(self.state.selected_mode) + 1) % len(MODES)
                                 self.set_mode(MODES[next_mode_index])
                             elif line and "best_score" in line.lower():
-                                payload = line.split(':', 1)[1].strip()
-                                parts = [p.strip() for p in payload.split('-') if p.strip() != ""]
-                                modes_no_quit = [m for m in MODES if m != "Quit"]
-                                for i, m in enumerate(modes_no_quit):
-                                    try:
-                                        self.state.best_scores[m] = int(parts[i])
-                                    except Exception:
-                                        pass
-                                self.state._sync_current_mode_best()
-                                self.render_screen()
-
-
-                                    
+                                score = line.split(':')[1]
+                                for i, part in enumerate(score.split('-')):
+                                    mode = MODES[i]
+                                    self.state.best_scores[mode] = int(part)
 
                         elif self.state.state_name == "PLAYING":
                             if self.state.selected_mode == "Button":    
@@ -138,18 +129,15 @@ class FlappyBirdApp(tk.Tk):
                                         saute = True
                             if line and "h" in line.lower():
                                 self.return_to_menu()
-                            
-                                
-                        
+                                               
                         elif self.state.state_name == "GAME_OVER":
                             if line and "h" in line.lower():
                                 self.return_to_menu()
                             if line and "j" in line.lower():
-                                self.change_state("PLAYING")
+                                self.handle_replay()
                         
                         if  line == "b":
                             self.toggle_info()
-           
 
                         print(f"Reçu série: {line}")
 
@@ -360,16 +348,7 @@ class FlappyBirdApp(tk.Tk):
             if self.serial_connected and self.serial_port:
                 self.serial_port.write(command.encode("utf-8"))
                 # Filet de sécurité : re-pousser le best final du mode courant
-            try:
-                mode = self.state.selected_mode
-                val = self.state.best_scores.get(mode, self.state.best_score)
-                msg = f"best_write:{mode}:{val}\n"
-                if self.serial_connected and self.serial_port:
-                    self.serial_port.write(msg.encode("utf-8"))
-                    print(f"Envoyé série: {msg.strip()}")
-            except Exception as e:
-                print(f"[BEST][GAME_OVER] err: {e}")
-
+           
         
         # Initialisation en entrant dans PLAYING
         if new_state == "PLAYING":

@@ -141,7 +141,7 @@ class Renderer:
         
         self.canvas.create_text(
             w // 2, hint_y + gap_y+30,
-            text="Press SPACE to start",
+            text="Press 🟡 to start",
             font=MENU_FONT,
             fill=MENU_COLOR,
             tags=("press_start",)
